@@ -16,14 +16,14 @@ Preview locally: `python3 -m http.server` → http://localhost:8000
 
 ## Before launch
 
-1. **Contact details** — phone is set to (604) 377-9927. Replace the placeholder email
-   `hello@westcoastfinish.ca` (search `index.html`, `privacy.html`).
+1. **Contact details** — set: (604) 377-9927 and westcoastfinish@gmail.com.
 2. **Domain** — replace `https://www.westcoastfinish.ca/` in `index.html` (canonical, Open Graph,
    JSON-LD), `robots.txt` and `sitemap.xml`.
 3. **Form delivery** — the forms validate and show the confirmation message, but submissions are
    simulated until you set `data-endpoint="…"` on `#estimate-form` and `#contact-form`
    (e.g. a Formspree/Basin/Getform endpoint). Photos are sent as `photos` in multipart form data.
-4. **Photos** — images are currently Unsplash stock photography (free for commercial use),
+4. **Photos** — see `IMAGE-PROMPTS.md` for AI prompts and file names for every photo slot;
+   upload results to `assets/img/photos/`. Until then, images are Unsplash stock photography (free for commercial use),
    hotlinked from `images.unsplash.com`. Replace them with photos of your own projects as soon as
    you have them — especially in *Our Work* and *Before & After*. The before/after sliders use one
    photo with a "worn paint" treatment on the before side; see the comment in `index.html` to
