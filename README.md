@@ -16,8 +16,8 @@ Preview locally: `python3 -m http.server` → http://localhost:8000
 
 ## Before launch
 
-1. **Contact details** — replace the placeholder phone `(604) 555-0142` / `+16045550142` and
-   email `hello@westcoastfinish.ca` (search `index.html`, `privacy.html`, `assets/js/main.js`).
+1. **Contact details** — phone is set to (604) 377-9927. Replace the placeholder email
+   `hello@westcoastfinish.ca` (search `index.html`, `privacy.html`).
 2. **Domain** — replace `https://www.westcoastfinish.ca/` in `index.html` (canonical, Open Graph,
    JSON-LD), `robots.txt` and `sitemap.xml`.
 3. **Form delivery** — the forms validate and show the confirmation message, but submissions are

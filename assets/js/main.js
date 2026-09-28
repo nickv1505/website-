@@ -458,7 +458,7 @@ const REVIEWS = [];
         success.closest(".form-card").scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "center" });
       } catch (err) {
         alertBox.querySelector("span").textContent =
-          "Sorry — something went wrong sending your request. Please try again, or call us at (604) 555-0142.";
+          "Sorry — something went wrong sending your request. Please try again, or call us at (604) 377-9927.";
         alertBox.classList.add("is-visible");
         alertBox.focus();
       } finally {
