@@ -145,20 +145,7 @@ const REVIEWS = [];
     revealEls.forEach((el) => io.observe(el));
   }
 
-  /* ---------- Work filters ---------- */
-  const chips = $$(".work-filters .chip");
   const workItems = $$(".work-item");
-  chips.forEach((chip) =>
-    chip.addEventListener("click", () => {
-      const f = chip.dataset.filter;
-      chips.forEach((c) => c.setAttribute("aria-pressed", String(c === chip)));
-      workItems.forEach((item) => {
-        const show = f === "all" || item.dataset.cat === f;
-        item.classList.toggle("is-hidden", !show);
-        if (show) item.classList.add("is-revealed");
-      });
-    })
-  );
 
   /* ---------- Lightbox ---------- */
   const lightbox = $("#lightbox");
@@ -167,7 +154,7 @@ const REVIEWS = [];
     const lbTitle = $("figcaption strong", lightbox);
     const lbSub = $("figcaption span", lightbox);
     let current = 0;
-    const visibleItems = () => workItems.filter((i) => !i.classList.contains("is-hidden"));
+    const visibleItems = () => workItems;
 
     const show = (item) => {
       const img = $("img", item);
