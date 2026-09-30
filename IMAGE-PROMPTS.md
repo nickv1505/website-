@@ -88,8 +88,15 @@ and roof."* Save as `ext-before.jpg` and `ext-after.jpg`.
 | `about-inset.jpg` (square) | Close-up of a fresh cut-in line where new wall paint meets the white ceiling |
 | `why-interior.jpg` | Room mid-repaint, new colour beside the old one, drop cloth and roller tray on the floor |
 
-## Hero
+## Hero animation (light grey)
 
-The top of the page shows `1586023492125` from Unsplash getting a "fresh coat" animation. To use
-your own photo, replace that photo link in `index.html` (it appears twice in the hero: on the
-`img` and in the `--photo` style).
+Two images of the **same room from the exact same spot**, used for the homepage painting animation:
+
+**`hero-before.jpg`**
+> Ordinary living room wall during a paint job, furniture moved away, walls in a dated tan-beige
+> with scuffs and patched nail holes, blue painter's tape along the baseboard, canvas drop cloth
+> on the floor, window with white blinds on one side, eye-level, straight-on, natural daylight.
+
+Then: *"Now show this exact same image, same camera position, with the walls freshly painted a
+clean **light grey** (like Benjamin Moore Stonington Gray or Sherwin-Williams Repose Gray), even
+coverage, everything else identical."* Save as **`hero-after.jpg`**.
