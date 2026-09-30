@@ -218,42 +218,45 @@ p { text-wrap: pretty; }
 .tile {
   position: relative;
   display: flex; flex-direction: column; gap: 8px;
-  padding: 88px 22px 24px;
+  padding: 0 0 22px;
   border-radius: var(--r);
   background: var(--white);
   box-shadow: 0 0 0 1px var(--line);
   overflow: hidden;
   transition: transform 300ms var(--out), box-shadow 300ms var(--out);
 }
-.tile::before { content: ""; position: absolute; inset: 0 0 auto 0; height: 64px; background: var(--paint) 0 0 / 240px, var(--sw, var(--stone)); background-blend-mode: multiply; box-shadow: inset 0 -1px 0 rgba(0, 0, 0, 0.06); transition: height 400ms var(--out); }
 .tile:hover { transform: translateY(-4px); box-shadow: 0 0 0 1px var(--stone), var(--shadow); }
-.tile:hover::before { height: 76px; }
-.tile h3 { font-size: 1.28rem; letter-spacing: -0.02em; }
+.tile h3, .tile p { padding-inline: 20px; }
+.tile h3 { font-size: 1.28rem; letter-spacing: -0.02em; margin-top: 8px; }
 .tile p { color: var(--muted); font-size: 0.96rem; line-height: 1.5; }
-.tile--big { grid-column: span 2; padding: 34px; min-height: 330px; justify-content: flex-end; gap: 14px; }
-.tile--big::before { display: none; }
-.tile--big h3 { font-size: clamp(1.8rem, 3vw, 2.5rem); }
-.tile--big p { font-size: 1.04rem; max-width: 46ch; }
+/* photo, with the tile's paint colour behind it (shows if the photo can't load) */
+.tile__img { position: relative; aspect-ratio: 4 / 3; overflow: hidden; background: var(--paint) 0 0 / 240px, var(--sw, var(--stone)); background-blend-mode: multiply; }
+.tile__img img { width: 100%; height: 100%; object-fit: cover; transition: scale 700ms var(--out); }
+.tile:hover .tile__img img { scale: 1.05; }
+.tile__chip { position: absolute; left: 12px; bottom: 12px; width: 34px; height: 34px; border-radius: 8px; background: var(--paint) 0 0 / 80px, var(--sw, var(--stone)); background-blend-mode: multiply; box-shadow: 0 0 0 3px var(--white), 0 6px 14px -6px rgba(0, 0, 0, 0.5); }
+.tile--big { grid-column: span 2; padding: 34px; min-height: 360px; justify-content: flex-end; gap: 14px; color: var(--paper); isolation: isolate; }
+.tile--big h3, .tile--big p { padding-inline: 0; }
+.tile__bg { position: absolute; inset: 0; z-index: -1; }
+.tile__bg img { width: 100%; height: 100%; object-fit: cover; transition: scale 900ms var(--out); }
+.tile__bg::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(22, 22, 20, 0.1) 0%, rgba(22, 22, 20, 0.35) 40%, rgba(22, 22, 20, 0.85) 100%); }
+.tile--big:hover .tile__bg img { scale: 1.04; }
+.tile--big h3 { font-size: clamp(1.8rem, 3vw, 2.5rem); margin-top: 0; }
+.tile--big p { font-size: 1.04rem; max-width: 46ch; color: rgba(246, 244, 239, 0.88); }
 .tile--big ul { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
-.tile--big li { padding: 6px 14px; border-radius: 999px; font-size: 0.86rem; font-weight: 600; }
-.tile__icon { position: absolute; top: 30px; left: 34px; width: 56px; height: 56px; display: grid; place-items: center; border-radius: 16px; }
+.tile--big li { padding: 6px 14px; border-radius: 999px; font-size: 0.86rem; font-weight: 600; background: rgba(255, 255, 255, 0.16); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+.tile__icon { position: absolute; top: 30px; left: 34px; width: 56px; height: 56px; display: grid; place-items: center; border-radius: 16px; background: rgba(246, 244, 239, 0.92); color: var(--ink); }
 .tile__icon svg { width: 28px; height: 28px; }
-.tile--interior { background: var(--paint) 0 0 / 260px, #c9cfcc; background-blend-mode: multiply; box-shadow: none; }
-.tile--interior p { color: #3d423f; }
-.tile--interior li { background: rgba(255, 255, 255, 0.6); }
-.tile--interior .tile__icon { background: var(--paper); }
-.tile--exterior { background: var(--paint) 0 0 / 260px, var(--teal); background-blend-mode: multiply; color: var(--paper); box-shadow: none; }
-.tile--exterior p { color: rgba(246, 244, 239, 0.82); }
-.tile--exterior li { background: rgba(255, 255, 255, 0.14); }
-.tile--exterior .tile__icon { background: rgba(255, 255, 255, 0.14); }
+.tile--interior { background: var(--paint) 0 0 / 260px, #7d8680; background-blend-mode: multiply; box-shadow: none; }
+.tile--exterior { background: var(--paint) 0 0 / 260px, var(--teal); background-blend-mode: multiply; box-shadow: none; }
 @media (max-width: 1000px) { .bento { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 560px) {
   .bento { gap: 12px; }
-  .tile { padding: 76px 16px 18px; }
-  .tile::before { height: 56px; }
-  .tile h3 { font-size: 1.1rem; }
+  .tile { padding: 0 0 16px; }
+  .tile h3, .tile p { padding-inline: 14px; }
+  .tile h3 { font-size: 1.08rem; }
   .tile p { font-size: 0.88rem; }
-  .tile--big { padding: 100px 22px 26px; min-height: 300px; }
+  .tile__chip { width: 26px; height: 26px; left: 10px; bottom: 10px; }
+  .tile--big { padding: 100px 22px 26px; min-height: 320px; }
   .tile__icon { top: 24px; left: 22px; }
 }
 

@@ -7,6 +7,13 @@
 
   $$("[data-year]").forEach((el) => (el.textContent = new Date().getFullYear()));
 
+  /* ---------- Photos that fail to load fall back to the tile's paint colour ---------- */
+  $$(".tile__img img, .tile__bg img").forEach((img) => {
+    const drop = () => img.remove();
+    if (img.complete && img.naturalWidth === 0 && img.getAttribute("src")) drop();
+    else img.addEventListener("error", drop, { once: true });
+  });
+
   /* ---------- Opening animation (tap to skip) ---------- */
   const root = document.documentElement;
   const intro = $(".intro");
