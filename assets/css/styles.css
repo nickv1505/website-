@@ -434,7 +434,7 @@ p { text-wrap: pretty; }
 .hero__fact { display: flex; align-items: center; gap: 12px; font-size: 0.95rem; font-weight: 500; color: rgba(255, 255, 255, 0.9); }
 .hero__fact svg { width: 22px; height: 22px; flex: none; opacity: 0.9; }
 
-/* Hero: a real photo gets a fresh coat. The old, scuffed version is covered in four roller strokes. */
+/* Hero video: a roller putting a fresh coat on an old wall */
 .hero__visual { margin: 0; }
 .paint-wall {
   position: relative;
@@ -445,25 +445,7 @@ p { text-wrap: pretty; }
   background: var(--gray-700);
   box-shadow: 0 40px 80px -30px rgba(0, 0, 0, 0.75), 0 0 0 1px rgba(255, 255, 255, 0.06);
 }
-.paint-wall .paint-wall__old { position: absolute; inset: 0; }
-.paint-wall__old img { width: 100%; height: 100%; object-fit: cover; }
-.paint-wall__coat { position: absolute; inset: 0; display: grid; grid-template-columns: repeat(4, 1fr); }
-.paint-wall__coat span {
-  background-image: var(--photo);
-  background-size: 400% 100%;
-  background-position: calc(var(--i) * 100% / 3) 0;
-  -webkit-mask: url("../img/paint-edge.png") 0 0 / 100% 200% no-repeat;
-          mask: url("../img/paint-edge.png") 0 0 / 100% 200% no-repeat;
-}
-.js .paint-wall:not(.is-done) .paint-wall__coat span { -webkit-mask-position: 0 100%; mask-position: 0 100%; }
-.paint-wall.is-playing .paint-wall__coat span {
-  animation: fresh-coat 1.15s cubic-bezier(0.45, 0.05, 0.55, 0.95) both;
-  animation-delay: calc(0.5s + var(--i) * 0.95s);
-}
-@keyframes fresh-coat {
-  from { -webkit-mask-position: 0 100%; mask-position: 0 100%; }
-  to { -webkit-mask-position: 0 0; mask-position: 0 0; }
-}
+.paint-wall__video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
 .paint-wall__label {
   position: absolute;
   left: 16px; top: 16px;
@@ -785,7 +767,6 @@ p { text-wrap: pretty; }
 /* "Before" treatment applied to a real photo: dull, dated colour, a different framing,
    and a multiply layer of scuffs, patches, nail holes and yellowing */
 .ba-shot--before img,
-.paint-wall__old img,
 .lightbox.is-before .lightbox__frame img {
   filter: saturate(0.62) sepia(0.32) hue-rotate(-6deg) brightness(0.9) contrast(0.9);
 }
@@ -793,7 +774,6 @@ p { text-wrap: pretty; }
   transform: scale(1.14) rotate(var(--tilt, -1.4deg)) translate(var(--dx, 2%), var(--dy, -1.5%));
 }
 .ba-shot--before .frame::before,
-.paint-wall__old::before,
 .lightbox.is-before .lightbox__frame::before {
   content: "";
   position: absolute;

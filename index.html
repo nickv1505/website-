@@ -150,16 +150,18 @@
         </div>
 
         <figure class="hero__visual" data-hero="3">
-          <div class="paint-wall" data-paint-wall style="--photo: url('https://images.unsplash.com/photo-1586023492125-27b2c045efd7?auto=format&fit=crop&w=1400&h=1050&q=80')">
-            <div class="paint-wall__old frame" data-fallback=""><img src="https://images.unsplash.com/photo-1586023492125-27b2c045efd7?auto=format&amp;fit=crop&amp;w=1400&amp;h=1050&amp;q=80" alt="" width="1400" height="1050" fetchpriority="high"></div>
-            <div class="paint-wall__coat" aria-hidden="true"><span style="--i:0"></span><span style="--i:1"></span><span style="--i:2"></span><span style="--i:3"></span></div>
+          <div class="paint-wall" data-paint-wall>
+            <video class="paint-wall__video" muted playsinline preload="auto" poster="assets/img/photos/hero-wall-before.jpg" width="960" height="720" aria-hidden="true">
+              <source src="assets/video/hero-painting.webm" type="video/webm">
+              <source src="assets/video/hero-painting.mp4" type="video/mp4">
+            </video>
             <span class="paint-wall__label" aria-hidden="true">Before</span>
             <button class="paint-wall__replay" type="button" hidden>
               <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>
               Watch again
             </button>
           </div>
-          <figcaption class="visually-hidden">A living room’s tired, scuffed walls getting a fresh coat of paint.</figcaption>
+          <figcaption class="visually-hidden">Short video: a paint roller rolling a fresh light grey coat over an old, scuffed tan wall, with tape on the baseboard and a drop cloth on the floor.</figcaption>
         </figure>
       </div>
     </section>

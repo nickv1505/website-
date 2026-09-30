@@ -145,13 +145,13 @@ const REVIEWS = [];
     revealEls.forEach((el) => io.observe(el));
   }
 
-  /* ---------- Hero: fresh coat rolls over the old paint once the photo is in view ---------- */
+  /* ---------- Hero video: plays once when in view, ends on the finished wall ---------- */
   const wall = $("[data-paint-wall]");
   if (wall) {
-    const photo = $(".paint-wall__old img", wall);
+    const video = $("video", wall);
     const label = $(".paint-wall__label", wall);
     const replay = $(".paint-wall__replay", wall);
-    const strokes = $$(".paint-wall__coat span", wall);
+    const AFTER = "assets/img/photos/hero-wall-after.jpg";
     const done = () => {
       wall.classList.remove("is-playing");
       wall.classList.add("is-done");
@@ -159,25 +159,29 @@ const REVIEWS = [];
       if (!reduceMotion) replay.hidden = false;
     };
     const play = () => {
-      replay.hidden = true;
-      label.textContent = "Before";
-      wall.classList.remove("is-playing", "is-done");
-      void wall.offsetWidth; // restart the CSS animation
+      wall.classList.remove("is-done");
       wall.classList.add("is-playing");
-      strokes[strokes.length - 1].addEventListener("animationend", done, { once: true });
+      replay.hidden = true;
+      video.currentTime = 0;
+      const p = video.play();
+      if (p && p.catch) p.catch(() => { video.poster = AFTER; done(); });
     };
+    video.addEventListener("ended", done);
+    // if no video format can play, fall back to the finished wall
+    const sources = $$("source", video);
+    sources[sources.length - 1].addEventListener("error", () => { video.poster = AFTER; done(); });
     replay.addEventListener("click", play);
-    const start = () => {
-      if (reduceMotion || !("IntersectionObserver" in window)) return done();
+    if (reduceMotion) {
+      video.removeAttribute("preload");
+      video.poster = AFTER;
+      done();
+    } else if ("IntersectionObserver" in window) {
       const io = new IntersectionObserver((entries) => {
-        if (entries.some((e) => e.isIntersecting)) { io.disconnect(); play(); }
+        if (entries.some((e) => e.isIntersecting)) { io.disconnect(); setTimeout(play, 500); }
       }, { threshold: 0.5 });
       io.observe(wall);
-    };
-    if (photo.complete && photo.naturalWidth) start();
-    else {
-      photo.addEventListener("load", start, { once: true });
-      photo.addEventListener("error", done, { once: true });
+    } else {
+      play();
     }
   }
 

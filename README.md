@@ -7,9 +7,11 @@ index.html            Home page (all sections)
 privacy.html          Privacy policy (linked from the forms)
 404.html              Not-found page
 assets/css/styles.css Design system + all styles
-assets/js/main.js     Navigation, gallery, before/after slider, forms, uploads
-assets/img/           Favicon/logo mark, wear overlays and paint-edge mask
-tools/make_overlays.py  Makes the wear overlays and paint-edge mask
+assets/js/main.js     Navigation, hero video, photo lightbox, forms, uploads
+assets/img/           Favicon/logo mark, wear overlays, hero video posters (photos/)
+assets/video/          Homepage painting video (mp4 + webm)
+tools/make_overlays.py  Makes the wear overlays
+tools/render_photos.py  Renders the homepage painting video: python3 tools/render_photos.py video
 robots.txt, sitemap.xml
 ```
 

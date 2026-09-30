@@ -1,12 +1,9 @@
 """
-Makes the small image assets the site uses to turn a real photo into its "before" version
-and to animate the hero's fresh coat of paint:
+Makes the image assets the site uses to turn a real photo into its "before" version:
 
   assets/img/wear-1.jpg, wear-2.jpg  scuffs, patched spots, nail holes and uneven, yellowed
                                      paint on a white background; blended over a photo with
                                      mix-blend-mode: multiply (white = no change)
-  assets/img/paint-edge.png          alpha mask with a ragged, streaky roller edge; slides
-                                     down to reveal fresh paint in the hero animation
 
 Run: python3 tools/make_overlays.py   (needs numpy, scipy, pillow)
 """
@@ -85,26 +82,8 @@ def wear(seed, w=1200, h=900):
     Image.fromarray((img * 255 + 0.5).astype(np.uint8)).save(OUT / f"wear-{seed}.jpg", quality=86, optimize=True)
 
 
-def paint_edge(w=320, h=1600):
-    """Top half opaque, ragged streaky roller edge, bottom half transparent."""
-    rng = np.random.default_rng(3)
-    yy, xx = np.mgrid[0:h, 0:w].astype(np.float32)
-    wob = gaussian_filter(rng.normal(0, 1, (1, w)), (0, 18)) * 22 + gaussian_filter(rng.normal(0, 1, (1, w)), (0, 3)) * 6
-    streaks = noise(rng, (h, w), (40, 2.4))
-    edge = h / 2 + wob
-    a = np.clip((edge - yy) / 34 + 0.5 + 0.22 * streaks * np.exp(-((yy - edge) / 50) ** 2), 0, 1)
-    # the sides fade slightly, like overlapping roller passes
-    side = np.clip(np.minimum(xx, w - 1 - xx) / 6.0, 0, 1)
-    a = a * (0.85 + 0.15 * side)
-    rgba = np.zeros((h, w, 4), np.uint8)
-    rgba[..., :3] = 255
-    rgba[..., 3] = (a * 255 + 0.5).astype(np.uint8)
-    Image.fromarray(rgba, "RGBA").save(OUT / "paint-edge.png", optimize=True)
-
-
 if __name__ == "__main__":
     OUT.mkdir(parents=True, exist_ok=True)
     wear(1)
     wear(2)
-    paint_edge()
-    print("wrote wear-1.jpg, wear-2.jpg, paint-edge.png")
+    print("wrote wear-1.jpg, wear-2.jpg")
