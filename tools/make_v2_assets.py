@@ -136,10 +136,44 @@ def roller(col=(0.13, 0.38, 0.41), w=420, h=620):
     Image.fromarray((im * 255 + 0.5).astype(np.uint8), "RGBA").resize((w, h), Image.LANCZOS).save(OUT / "roller.png", optimize=True)
 
 
+def door_tile():
+    """Close-up of a freshly painted white six-panel door in a light grey wall."""
+    s = rp.Scene(611, corner=None, ceil_y=60, floor_y=1650)
+    s.room((0.70, 0.71, 0.69), floor="wood", floor_col=(0.5, 0.38, 0.27), light_side=-1)
+    s.glow(600, 700, 900, 900, 0.18)
+    s.door(760, 260, 760, 1390, col=(0.95, 0.945, 0.93))
+    s.plate(1720, 860, "switch")
+    img = s.render()
+    rp.shoot(img, out=(640, 480), cx=1180, cy=1000, view=1450, yaw=0.06, pitch=-0.05, roll=-1.0,
+             exposure=0.9, wb=rp.NEUTRAL, seed=21).save(OUT / "tile-door.jpg", quality=84, optimize=True, progressive=True)
+
+
+def ceiling_tile():
+    """Looking up at a freshly painted flat white ceiling with a light and pot lights."""
+    s = rp.Scene(612, corner=1500, ceil_y=1380, floor_y=H + 10, ceil_slope=0.55)
+    s.room((0.84, 0.83, 0.80), floor=None, bb=0, ceil_col=(0.96, 0.955, 0.94), light_side=-1)
+    # soft falloff across the ceiling plane
+    s.light *= np.where(s.yy < s.C[None], 0.80 + 0.2 * np.clip(s.yy / 1380.0, 0, 1) + 0.06 * np.exp(-((s.xx - 700) / 700) ** 2), 1)
+    rim = s.mask(lambda d: d.ellipse([560, 560, 1000, 780], fill=255), blur=2)
+    s.shadow(rim, 0, 18, 22, 0.22)
+    s.put(rim, (0.85, 0.84, 0.81))
+    s.ceiling_light(780, 670, 190)
+    for (x0, y0) in [(260, 1120), (1250, 1180), (1250, 330)]:
+        pot = s.mask(lambda d, x0=x0, y0=y0: d.ellipse([x0 - 46, y0 - 22, x0 + 46, y0 + 22], fill=255), blur=1.2)
+        s.put(pot, (0.78, 0.77, 0.75))
+        inner = s.mask(lambda d, x0=x0, y0=y0: d.ellipse([x0 - 32, y0 - 14, x0 + 32, y0 + 14], fill=255), blur=1.5)
+        s.emit = np.maximum(s.emit, inner)
+        s.emit_col = s.emit_col * (1 - inner[..., None]) + rp.rgb((1.05, 1.0, 0.92))[None, None] * inner[..., None]
+    s.window(200, 1480, 520, 600, blinds=0.5)
+    img = s.render()
+    rp.shoot(img, out=(640, 480), cx=1000, cy=900, view=1850, yaw=0.03, pitch=0.16, roll=2.0,
+             exposure=0.9, wb=rp.NEUTRAL, seed=22).save(OUT / "tile-ceiling.jpg", quality=84, optimize=True, progressive=True)
+
+
 if __name__ == "__main__":
     OUT.mkdir(parents=True, exist_ok=True)
     only = sys.argv[1:]
-    for name, fn in [("texture", paint_texture), ("edge", paint_edge), ("roller", roller), ("room", room)]:
+    for name, fn in [("texture", paint_texture), ("edge", paint_edge), ("roller", roller), ("room", room), ("door", door_tile), ("ceiling", ceiling_tile)]:
         if not only or name in only:
             fn()
-    print("wrote room-base.jpg, room-mask.png, paint-texture.png, paint-edge.png, roller.png")
+    print("done")

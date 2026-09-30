@@ -105,7 +105,7 @@
     roomName.textContent = sw.dataset.name;
   }));
 
-  /* ---------- Colour picker in the estimate form (100 colours) ---------- */
+  /* ---------- Colour picker in the estimate form (1,000 colours) ---------- */
   const COLOURS = window.WCF_COLOURS || [];
   const MAX_COLOURS = 6;
   const picker = $(".picker");
@@ -178,7 +178,8 @@
       const q = search.value.trim().toLowerCase();
       let shown = 0;
       COLOURS.forEach((c, i) => {
-        const ok = (family === "All" || c.family === family) && (!q || (c.name + " " + c.code + " " + c.family).toLowerCase().includes(q));
+        const hay = (c.name + " " + c.code + " " + c.family + " " + (c.tags || "")).toLowerCase();
+        const ok = (family === "All" || c.family === family) && (!q || q.split(/\s+/).every((w) => hay.includes(w)));
         buttons[i].hidden = !ok;
         if (ok) shown++;
       });
