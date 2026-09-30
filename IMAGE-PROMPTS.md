@@ -10,50 +10,60 @@ files in `assets/img/photos/` (create the folder), then replace the matching Uns
 `index.html`, or send the photos to Claude to do it. When a before/after pair uses two real
 photos, remove the `ba-shot--before` class from that "before" button so no effect is added.
 
-## The look we want
+## The look we want (based on your reference photos)
 
-Photos a local painter took on their phone while on the job. They should not look like
-real-estate marketing, stock photography or AI art.
+Your references are real before/after job photos: each pair is shot from **the same spot and angle**,
+in **ordinary daylight**, with an ordinary phone. The room or house is the same; only the paint
+changes. The "before" shows a dated or tired colour; the "after" is clean and fresh. Nothing is
+staged or dramatic.
 
 **Style line: add this to the end of every prompt:**
 
-> Casual smartphone photo taken by a house painter on the job, ordinary lived-in Canadian home,
-> real drywall with slight texture, natural indoor light from a window plus ceiling light, uneven
-> brightness, slightly crooked framing, a little soft focus and grain, not staged, not wide-angle,
-> not luxury, not a stock photo. No people, no hands, no pets, no text, no watermark.
+> Realistic smartphone photo, like a real before/after photo posted by a local painting company.
+> Ordinary suburban home, natural daylight, eye-level, straight-on, slight lens distortion, normal
+> phone sharpness and colour, not staged, not wide-angle luxury real-estate photography, not a
+> render. No people, no hands, no text, no watermark, no logo.
 
-Skip any result that shows people or hands, looks too perfect or glossy, or shows a fancy house.
+Skip any result with people or hands, warped details, or a fancy house.
 
 ## Before & After (4 pairs), most important
 
-Only the **walls** change between before and after. Floors, tile, counters, cabinets and
-fixtures stay the same.
+Only the **walls** change. Floors, doors, windows, blinds, fixtures, cabinets and counters stay
+the same.
 
 1. Generate the **before** image.
-2. In the same chat, ask: *"Now show the same room after a professional painter repainted only
-   the walls [NEW COLOUR]. Same room, same furniture, but take the photo from a slightly
-   different spot and angle, with slightly different lighting, like a second phone photo taken
-   at the end of the job. Keep the floor, fixtures, cabinets and counters exactly as they were."*
+2. In the same chat, ask: *"Now show this exact same room after a professional painter repainted
+   only the walls [NEW COLOUR]. Same camera position and angle, same everything else, drop
+   cloths removed, a little brighter daylight."*
 
-**`ba-bathroom-before.jpg`** → then after in **soft sage green** → **`ba-bathroom-after.jpg`**
-> Small ordinary bathroom, wall above a plain white vanity with a simple mirror and a towel bar.
-> Walls painted an old dated peach colour with scuff marks, a few small patched spots, slight
-> yellowing near the ceiling and grime around the light switch.
+**`ba-bedroom-before.jpg`** → then after in **soft grey-green** → **`ba-bedroom-after.jpg`**
+(like your fourth reference)
+> Empty bedroom in an ordinary house, walls painted a loud dated orange-red, white closet doors,
+> two windows with white blinds, ceiling fan, dark laminate floor partly covered with a canvas drop
+> cloth, taken from the doorway.
+
+**`ba-living-before.jpg`** → then after in **light warm grey** → **`ba-living-after.jpg`**
+(like your third reference, walls only)
+> Ordinary two-storey entry and living area with walls painted a dated beige-tan, carpet, a wall
+> vent, a light switch, afternoon daylight, taken from the front door.
 
 **`ba-kitchen-before.jpg`** → then after in **clean warm white** → **`ba-kitchen-after.jpg`**
-> Ordinary kitchen wall between upper cabinets, window over the sink, counter along the bottom.
-> Walls painted a yellowed builder-beige with greasy discolouration near the stove side, marks
-> around the outlet and switch.
+> Ordinary kitchen wall between plain cabinets, window over the sink, walls painted a yellowed
+> builder beige with marks around the switch and outlet, eye-level, daylight.
 
-**`ba-living-before.jpg`** → then after in **light greige** → **`ba-living-after.jpg`**
-> Mostly empty living room during a paint job, one wall with a window and baseboard. Walls
-> painted a tired tan colour with scuffs at furniture height, nail holes, a faded outline where a
-> picture used to hang, and a couple of small dents.
+**`ba-bathroom-before.jpg`** → then after in **soft sage green** → **`ba-bathroom-after.jpg`**
+> Small ordinary bathroom, plain white vanity, simple mirror, towel bar, walls painted a dated
+> peach colour with a few scuffs, overhead vanity light on.
 
-**`ba-bedroom-before.jpg`** → then after in **calm blue-grey** → **`ba-bedroom-after.jpg`**
-> Simple bedroom wall with a white closet door and a window with blinds, little furniture.
-> Walls painted a faded dusty mauve colour with scuff marks, small patched spots and uneven,
-> slightly blotchy old paint.
+### Exterior pair (optional, for the Exterior Painting card)
+
+Like your first two references:
+> Front of an ordinary two-storey suburban stucco house with a double garage, stucco painted a
+> dull dated green-grey or tan, brown front door, daytime, taken from the sidewalk.
+
+Then: *"Now show the same house after a professional exterior repaint: stucco in a crisp warm
+white, fascia and gutters in black, garage door in white. Same camera position, same landscaping
+and roof."* Save as `ext-before.jpg` and `ext-after.jpg`.
 
 ## Services
 
