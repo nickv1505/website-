@@ -145,36 +145,64 @@ const REVIEWS = [];
     revealEls.forEach((el) => io.observe(el));
   }
 
-  const workItems = $$(".work-item");
+  /* ---------- Hero: paint roller rolls a fresh coat over the old wall ---------- */
+  const wall = $("[data-paint-wall]");
+  if (wall) {
+    const label = $(".paint-wall__label", wall);
+    const finish = () => {
+      wall.classList.remove("is-animating");
+      wall.classList.add("is-done");
+      if (label) label.textContent = "After";
+    };
+    if (reduceMotion) {
+      finish();
+    } else {
+      // Start only once both photos are loaded, so the new coat never rolls on blank
+      const srcs = [$("img", wall).currentSrc || $("img", wall).src, wall.dataset.after];
+      let pending = srcs.length;
+      const failsafe = setTimeout(finish, 6000);
+      const ready = () => {
+        if (--pending > 0) return;
+        clearTimeout(failsafe);
+        wall.classList.add("is-animating");
+        const last = $$(".paint-wall__coat span", wall).pop();
+        last.addEventListener("animationend", finish, { once: true });
+      };
+      srcs.forEach((src) => {
+        const im = new Image();
+        im.onload = ready;
+        im.onerror = () => { clearTimeout(failsafe); finish(); };
+        im.src = src;
+      });
+    }
+  }
 
-  /* ---------- Lightbox ---------- */
+  /* ---------- Lightbox (Our Work gallery and Before & After photos) ---------- */
   const lightbox = $("#lightbox");
+  const zoomables = $$("[data-lightbox]");
   if (lightbox && typeof lightbox.showModal === "function") {
     const lbImg = $("img", lightbox);
     const lbTitle = $("figcaption strong", lightbox);
     const lbSub = $("figcaption span", lightbox);
+    let group = [];
     let current = 0;
-    const visibleItems = () => workItems;
 
     const show = (item) => {
       const img = $("img", item);
-      const src = new URL(img.currentSrc || img.src);
-      src.searchParams.set("w", "1800");
-      src.searchParams.set("q", "85");
-      lbImg.src = src.toString();
+      lbImg.src = img.currentSrc || img.src;
       lbImg.alt = img.alt;
-      lbTitle.textContent = $(".work-item__caption strong", item).textContent;
-      lbSub.textContent = $(".work-item__caption strong + span", item).textContent;
+      lbTitle.textContent = item.dataset.title || "";
+      lbSub.textContent = item.dataset.sub || "";
     };
     const step = (d) => {
-      const list = visibleItems();
-      current = (current + d + list.length) % list.length;
-      show(list[current]);
+      current = (current + d + group.length) % group.length;
+      show(group[current]);
     };
 
-    workItems.forEach((item) =>
+    zoomables.forEach((item) =>
       item.addEventListener("click", () => {
-        current = visibleItems().indexOf(item);
+        group = zoomables.filter((z) => z.dataset.lightbox === item.dataset.lightbox);
+        current = group.indexOf(item);
         show(item);
         lightbox.showModal();
       })
@@ -190,67 +218,6 @@ const REVIEWS = [];
       if (e.key === "ArrowRight") step(1);
     });
   }
-
-  /* ---------- Before / After sliders ---------- */
-  $$("[data-ba]").forEach((ba) => {
-    const range = $(".ba__range", ba);
-    const set = (v) => {
-      const pct = Math.max(0, Math.min(100, v));
-      ba.style.setProperty("--pos", pct + "%");
-      range.value = pct;
-      range.setAttribute("aria-valuetext", `${Math.round(pct)}% before, ${Math.round(100 - pct)}% after`);
-    };
-    set(50);
-    range.addEventListener("input", () => set(Number(range.value)));
-
-    // Pointer dragging (range input covers the area, but pointer events give smoother tracking)
-    let dragging = false;
-    const fromEvent = (e) => {
-      const r = ba.getBoundingClientRect();
-      set(((e.clientX - r.left) / r.width) * 100);
-    };
-    ba.addEventListener("pointerdown", (e) => {
-      dragging = true;
-      ba.classList.add("is-dragging");
-      ba.setPointerCapture(e.pointerId);
-      fromEvent(e);
-    });
-    ba.addEventListener("pointermove", (e) => dragging && fromEvent(e));
-    const end = () => {
-      dragging = false;
-      ba.classList.remove("is-dragging");
-    };
-    ba.addEventListener("pointerup", end);
-    ba.addEventListener("pointercancel", end);
-  });
-
-  /* ---------- Before / After tabs ---------- */
-  const tabs = $$(".ba-tab");
-  const activate = (tab, focus) => {
-    tabs.forEach((t) => {
-      const on = t === tab;
-      t.setAttribute("aria-selected", String(on));
-      t.tabIndex = on ? 0 : -1;
-      $("#" + t.getAttribute("aria-controls")).hidden = !on;
-    });
-    if (focus) tab.focus();
-  };
-  tabs.forEach((tab, i) => {
-    tab.addEventListener("click", () => activate(tab));
-    tab.addEventListener("keydown", (e) => {
-      const keys = { ArrowDown: 1, ArrowRight: 1, ArrowUp: -1, ArrowLeft: -1 };
-      if (e.key in keys) {
-        e.preventDefault();
-        activate(tabs[(i + keys[e.key] + tabs.length) % tabs.length], true);
-      } else if (e.key === "Home") {
-        e.preventDefault();
-        activate(tabs[0], true);
-      } else if (e.key === "End") {
-        e.preventDefault();
-        activate(tabs[tabs.length - 1], true);
-      }
-    });
-  });
 
   /* ---------- Reviews (renders only when REVIEWS has entries) ---------- */
   const reviewsSlot = $("#reviews");
