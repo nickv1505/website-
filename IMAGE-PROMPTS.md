@@ -1,13 +1,14 @@
 # West Coast Finish: photo prompts
 
-The site's photos in `assets/img/photos/` are computer-rendered stand-ins made by
-`tools/render_photos.py`. They show the right things (simple rooms, real drywall, before and
-after wall painting, no people), but they are renders, not photographs.
+The site uses real Unsplash photographs, linked in `index.html`. The "before" photos are the same
+pictures as the "after" photos, made to look old in the browser, so they are close but not true
+before/after pairs.
 
-To swap in more realistic images, generate them with an AI image tool (ChatGPT, Gemini,
-Midjourney, Adobe Firefly…) using the prompts below. Save each one with the **exact file name**
-shown and upload it to `assets/img/photos/`, replacing the old file. The site picks it up
-automatically; no code changes are needed.
+The best upgrade is your own photos from real jobs: a phone photo of a wall when you arrive and
+another after it's painted. AI-generated photos made with the prompts below also work. Put the
+files in `assets/img/photos/` (create the folder), then replace the matching Unsplash link in
+`index.html`, or send the photos to Claude to do it. When a before/after pair uses two real
+photos, remove the `ba-shot--before` class from that "before" button so no effect is added.
 
 ## The look we want
 
@@ -77,9 +78,8 @@ fixtures stay the same.
 | `about-inset.jpg` (square) | Close-up of a fresh cut-in line where new wall paint meets the white ceiling |
 | `why-interior.jpg` | Room mid-repaint, new colour beside the old one, drop cloth and roller tray on the floor |
 
-## Hero video
+## Hero
 
-The video at the top of the page (`assets/video/hero-painting.mp4` and `.webm`) is rendered by
-`python3 tools/render_photos.py video`, which also writes `hero-wall-before.jpg` (first frame) and
-`hero-wall-after.jpg` (last frame). To use your own clip instead, film a short, steady phone video
-of a roller putting a new colour on a wall (5–8 seconds, landscape) and replace both video files.
+The top of the page shows `1586023492125` from Unsplash getting a "fresh coat" animation. To use
+your own photo, replace that photo link in `index.html` (it appears twice in the hero: on the
+`img` and in the `--photo` style).

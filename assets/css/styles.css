@@ -76,6 +76,7 @@ body {
   overflow-x: hidden;
 }
 
+[hidden] { display: none !important; }
 img { display: block; max-width: 100%; height: auto; }
 a { color: inherit; text-decoration: none; }
 button, input, select, textarea { font: inherit; color: inherit; }
@@ -433,7 +434,7 @@ p { text-wrap: pretty; }
 .hero__fact { display: flex; align-items: center; gap: 12px; font-size: 0.95rem; font-weight: 500; color: rgba(255, 255, 255, 0.9); }
 .hero__fact svg { width: 22px; height: 22px; flex: none; opacity: 0.9; }
 
-/* Hero video: a roller putting a fresh coat on an old wall */
+/* Hero: a real photo gets a fresh coat. The old, scuffed version is covered in four roller strokes. */
 .hero__visual { margin: 0; }
 .paint-wall {
   position: relative;
@@ -444,7 +445,25 @@ p { text-wrap: pretty; }
   background: var(--gray-700);
   box-shadow: 0 40px 80px -30px rgba(0, 0, 0, 0.75), 0 0 0 1px rgba(255, 255, 255, 0.06);
 }
-.paint-wall__video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
+.paint-wall .paint-wall__old { position: absolute; inset: 0; }
+.paint-wall__old img { width: 100%; height: 100%; object-fit: cover; }
+.paint-wall__coat { position: absolute; inset: 0; display: grid; grid-template-columns: repeat(4, 1fr); }
+.paint-wall__coat span {
+  background-image: var(--photo);
+  background-size: 400% 100%;
+  background-position: calc(var(--i) * 100% / 3) 0;
+  -webkit-mask: url("../img/paint-edge.png") 0 0 / 100% 200% no-repeat;
+          mask: url("../img/paint-edge.png") 0 0 / 100% 200% no-repeat;
+}
+.js .paint-wall:not(.is-done) .paint-wall__coat span { -webkit-mask-position: 0 100%; mask-position: 0 100%; }
+.paint-wall.is-playing .paint-wall__coat span {
+  animation: fresh-coat 1.15s cubic-bezier(0.45, 0.05, 0.55, 0.95) both;
+  animation-delay: calc(0.5s + var(--i) * 0.95s);
+}
+@keyframes fresh-coat {
+  from { -webkit-mask-position: 0 100%; mask-position: 0 100%; }
+  to { -webkit-mask-position: 0 0; mask-position: 0 0; }
+}
 .paint-wall__label {
   position: absolute;
   left: 16px; top: 16px;
@@ -479,6 +498,7 @@ p { text-wrap: pretty; }
   transition: background-color var(--dur) var(--ease);
 }
 .paint-wall__replay:hover { background: rgba(13, 13, 12, 0.9); }
+.paint-wall__replay[hidden] { display: none; }
 .paint-wall__replay svg { width: 16px; height: 16px; }
 
 @media (max-width: 900px) {
@@ -691,6 +711,7 @@ p { text-wrap: pretty; }
 .lightbox[open] { animation: fade-scale 280ms var(--ease-out); }
 @keyframes fade-scale { from { opacity: 0; transform: scale(0.97); } to { opacity: 1; transform: none; } }
 .lightbox figure { margin: 0; }
+.lightbox__frame { position: relative; display: block; overflow: hidden; }
 .lightbox img { width: 100%; max-height: calc(100vh - 120px); object-fit: contain; background: var(--black); }
 .lightbox figcaption { display: flex; justify-content: space-between; gap: 16px; padding: 16px 20px; font-size: 0.92rem; }
 .lightbox figcaption strong { font-family: var(--font-display); }
@@ -744,8 +765,8 @@ p { text-wrap: pretty; }
   cursor: zoom-in;
 }
 .ba-shot .frame { position: absolute; inset: 0; }
-.ba-shot img { transition: transform 700ms var(--ease-out); }
-.ba-shot:hover img, .ba-shot:focus-visible img { transform: scale(1.04); }
+.ba-shot img { transition: scale 700ms var(--ease-out); }
+.ba-shot:hover img, .ba-shot:focus-visible img { scale: 1.04; }
 .ba-tag {
   position: absolute;
   left: 10px; top: 10px;
@@ -760,6 +781,30 @@ p { text-wrap: pretty; }
 .ba-tag--before { background: rgba(13, 13, 12, 0.82); color: var(--white); }
 .ba-tag--after { background: var(--white); color: var(--black); box-shadow: var(--shadow-sm); }
 .ba-card__note { font-size: 0.93rem; color: var(--text-muted); }
+
+/* "Before" treatment applied to a real photo: dull, dated colour, a different framing,
+   and a multiply layer of scuffs, patches, nail holes and yellowing */
+.ba-shot--before img,
+.paint-wall__old img,
+.lightbox.is-before .lightbox__frame img {
+  filter: saturate(0.62) sepia(0.32) hue-rotate(-6deg) brightness(0.9) contrast(0.9);
+}
+.ba-shot--before img {
+  transform: scale(1.14) rotate(var(--tilt, -1.4deg)) translate(var(--dx, 2%), var(--dy, -1.5%));
+}
+.ba-shot--before .frame::before,
+.paint-wall__old::before,
+.lightbox.is-before .lightbox__frame::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: url("../img/wear-1.jpg") center / cover;
+  mix-blend-mode: multiply;
+  pointer-events: none;
+}
+.ba-shot--wear2 .frame::before { background-image: url("../img/wear-2.jpg"); }
+.ba-shot--before .ba-tag, .ba-shot .ba-tag { z-index: 2; }
 
 @media (max-width: 900px) { .ba-grid { grid-template-columns: 1fr; } }
 @media (max-width: 420px) {

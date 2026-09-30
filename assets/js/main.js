@@ -145,13 +145,13 @@ const REVIEWS = [];
     revealEls.forEach((el) => io.observe(el));
   }
 
-  /* ---------- Hero video: plays once when in view, ends on the finished wall ---------- */
+  /* ---------- Hero: fresh coat rolls over the old paint once the photo is in view ---------- */
   const wall = $("[data-paint-wall]");
   if (wall) {
-    const video = $("video", wall);
+    const photo = $(".paint-wall__old img", wall);
     const label = $(".paint-wall__label", wall);
     const replay = $(".paint-wall__replay", wall);
-    const AFTER = "assets/img/photos/hero-wall-after.jpg";
+    const strokes = $$(".paint-wall__coat span", wall);
     const done = () => {
       wall.classList.remove("is-playing");
       wall.classList.add("is-done");
@@ -159,29 +159,25 @@ const REVIEWS = [];
       if (!reduceMotion) replay.hidden = false;
     };
     const play = () => {
-      wall.classList.remove("is-done");
-      wall.classList.add("is-playing");
       replay.hidden = true;
-      video.currentTime = 0;
-      const p = video.play();
-      if (p && p.catch) p.catch(() => { video.poster = AFTER; done(); });
+      label.textContent = "Before";
+      wall.classList.remove("is-playing", "is-done");
+      void wall.offsetWidth; // restart the CSS animation
+      wall.classList.add("is-playing");
+      strokes[strokes.length - 1].addEventListener("animationend", done, { once: true });
     };
-    video.addEventListener("ended", done);
-    // if no video format can play, fall back to the finished wall
-    const sources = $$("source", video);
-    sources[sources.length - 1].addEventListener("error", () => { video.poster = AFTER; done(); });
     replay.addEventListener("click", play);
-    if (reduceMotion) {
-      video.removeAttribute("preload");
-      video.poster = AFTER;
-      done();
-    } else if ("IntersectionObserver" in window) {
+    const start = () => {
+      if (reduceMotion || !("IntersectionObserver" in window)) return done();
       const io = new IntersectionObserver((entries) => {
-        if (entries.some((e) => e.isIntersecting)) { io.disconnect(); setTimeout(play, 500); }
+        if (entries.some((e) => e.isIntersecting)) { io.disconnect(); play(); }
       }, { threshold: 0.5 });
       io.observe(wall);
-    } else {
-      play();
+    };
+    if (photo.complete && photo.naturalWidth) start();
+    else {
+      photo.addEventListener("load", start, { once: true });
+      photo.addEventListener("error", done, { once: true });
     }
   }
 
@@ -197,6 +193,7 @@ const REVIEWS = [];
 
     const show = (item) => {
       const img = $("img", item);
+      lightbox.classList.toggle("is-before", item.hasAttribute("data-before"));
       lbImg.src = img.currentSrc || img.src;
       lbImg.alt = img.alt;
       lbTitle.textContent = item.dataset.title || "";
