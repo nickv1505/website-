@@ -69,17 +69,6 @@ fixtures stay the same.
 | `doors.jpg` | Hallway with two white interior panel doors freshly painted |
 | `hallways.jpg` | Hallway wall freshly painted, doorway, light switch, a few coat hooks |
 
-## Our Work gallery
-
-| File | Prompt |
-|---|---|
-| `work-living.jpg` | Living room walls after two coats of light greige |
-| `work-kitchen.jpg` | Kitchen walls repainted clean warm white |
-| `work-bedroom.jpg` | Bedroom walls repainted calm blue-grey |
-| `work-bathroom.jpg` | Bathroom walls repainted soft sage green |
-| `work-office.jpg` | Home office wall repainted muted green |
-| `work-exterior.jpg` | Freshly painted lap siding and window trim on an ordinary house |
-
 ## About and Why Choose Us (job site, no people)
 
 | File | Prompt |
@@ -88,8 +77,9 @@ fixtures stay the same.
 | `about-inset.jpg` (square) | Close-up of a fresh cut-in line where new wall paint meets the white ceiling |
 | `why-interior.jpg` | Room mid-repaint, new colour beside the old one, drop cloth and roller tray on the floor |
 
-## Hero animation
+## Hero video
 
-`hero-wall-before.jpg` and `hero-wall-after.jpg` must be the **exact same photo** with only the wall
-colour changed, because the animation rolls one over the other. Keep the rendered pair unless you
-can edit a single photo to change only the wall colour.
+The video at the top of the page (`assets/video/hero-painting.mp4` and `.webm`) is rendered by
+`python3 tools/render_photos.py video`, which also writes `hero-wall-before.jpg` (first frame) and
+`hero-wall-after.jpg` (last frame). To use your own clip instead, film a short, steady phone video
+of a roller putting a new colour on a wall (5–8 seconds, landscape) and replace both video files.

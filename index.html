@@ -149,24 +149,20 @@
         </div>
 
         <figure class="hero__visual" data-hero="3">
-          <div class="paint-wall" data-paint-wall data-after="assets/img/photos/hero-wall-after.jpg">
-            <img src="assets/img/photos/hero-wall-before.jpg" alt="" width="1400" height="1050" fetchpriority="high">
-            <div class="paint-wall__coat" aria-hidden="true"><span style="--i:0"></span><span style="--i:1"></span><span style="--i:2"></span><span style="--i:3"></span></div>
-            <svg class="paint-wall__roller" viewBox="0 0 200 330" aria-hidden="true">
-              <rect x="6" y="8" width="188" height="58" rx="29" fill="#a3b3a8"/>
-              <rect x="6" y="8" width="188" height="58" rx="29" fill="url(#nap)" opacity=".5"/>
-              <rect x="6" y="8" width="188" height="20" rx="10" fill="#fff" opacity=".18"/>
-              <path d="M100 66v38l40 26v44" fill="none" stroke="#8a8a86" stroke-width="7" stroke-linejoin="round"/>
-              <rect x="128" y="168" width="24" height="150" rx="11" fill="#1f1f1e"/>
-            </svg>
+          <div class="paint-wall" data-paint-wall>
+            <video class="paint-wall__video" muted playsinline preload="auto" poster="assets/img/photos/hero-wall-before.jpg" width="960" height="720" aria-hidden="true">
+              <source src="assets/video/hero-painting.webm" type="video/webm">
+              <source src="assets/video/hero-painting.mp4" type="video/mp4">
+            </video>
             <span class="paint-wall__label" aria-hidden="true">Before</span>
+            <button class="paint-wall__replay" type="button" hidden>
+              <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>
+              Watch again
+            </button>
           </div>
-          <figcaption class="visually-hidden">A paint roller rolling a fresh sage-green coat over an old, scuffed beige wall.</figcaption>
+          <figcaption class="visually-hidden">Short video: a paint roller rolling a fresh sage-green coat over an old, scuffed beige wall, with tape on the baseboard and a drop cloth on the floor.</figcaption>
         </figure>
       </div>
-      <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
-        <defs><pattern id="nap" width="6" height="6" patternUnits="userSpaceOnUse"><circle cx="2" cy="2" r="1.3" fill="#000" opacity=".25"/><circle cx="5" cy="5" r="1" fill="#fff" opacity=".25"/></pattern></defs>
-      </svg>
     </section>
 
     <!-- ============ SERVICES ============ -->
@@ -253,36 +249,40 @@
         <div class="section-head section-head--split" data-reveal>
           <div>
             <p class="eyebrow">Our Work</p>
-            <h2 id="work-title">Finished rooms, finished homes.</h2>
+            <h2 id="work-title">Done properly, from prep to clean-up.</h2>
           </div>
-          <p>A look at the kind of residential painting we do: interiors, exteriors, ceilings and doors. Select any photo to view it larger.</p>
+          <p>West Coast Finish is a family-owned company with 30+ years in the business. We paint homes the way we’d want our own painted: carefully, cleanly and to a high standard, whether it’s one bedroom or the whole house.</p>
         </div>
 
-        <div class="work-grid" id="work-grid">
-          <button class="work-item" type="button" data-lightbox="work" data-title="Living Room" data-sub="Walls &amp; ceiling" data-reveal>
-            <span class="frame" data-fallback="Living Room"><img src="assets/img/photos/work-living.jpg" alt="Living room walls after two coats of light greige" loading="lazy" width="1000" height="750"></span>
-            <span class="work-item__caption"><span><strong>Living Room</strong><span>Walls &amp; ceiling</span></span><span class="work-item__zoom" aria-hidden="true"><svg><use href="#i-expand"/></svg></span></span>
-          </button>
-          <button class="work-item" type="button" data-lightbox="work" data-title="Exterior Repaint" data-sub="Lap siding" data-reveal style="--reveal-delay:80ms">
-            <span class="frame" data-fallback="Exterior Repaint"><img src="assets/img/photos/work-exterior.jpg" alt="Freshly painted lap siding and window trim on a house" loading="lazy" width="1000" height="750"></span>
-            <span class="work-item__caption"><span><strong>Exterior Repaint</strong><span>Lap siding</span></span><span class="work-item__zoom" aria-hidden="true"><svg><use href="#i-expand"/></svg></span></span>
-          </button>
-          <button class="work-item" type="button" data-lightbox="work" data-title="Kitchen" data-sub="Walls &amp; ceiling" data-reveal style="--reveal-delay:160ms">
-            <span class="frame" data-fallback="Kitchen"><img src="assets/img/photos/work-kitchen.jpg" alt="Kitchen walls repainted a clean warm white" loading="lazy" width="1000" height="750"></span>
-            <span class="work-item__caption"><span><strong>Kitchen</strong><span>Walls &amp; ceiling</span></span><span class="work-item__zoom" aria-hidden="true"><svg><use href="#i-expand"/></svg></span></span>
-          </button>
-          <button class="work-item" type="button" data-lightbox="work" data-title="Bedroom" data-sub="Colour change" data-reveal>
-            <span class="frame" data-fallback="Bedroom"><img src="assets/img/photos/work-bedroom.jpg" alt="Bedroom walls repainted a calm blue-grey" loading="lazy" width="1000" height="750"></span>
-            <span class="work-item__caption"><span><strong>Bedroom</strong><span>Colour change</span></span><span class="work-item__zoom" aria-hidden="true"><svg><use href="#i-expand"/></svg></span></span>
-          </button>
-          <button class="work-item" type="button" data-lightbox="work" data-title="Bathroom" data-sub="Moisture-resistant paint" data-reveal style="--reveal-delay:80ms">
-            <span class="frame" data-fallback="Bathroom"><img src="assets/img/photos/work-bathroom.jpg" alt="Bathroom walls repainted a soft sage green" loading="lazy" width="1000" height="750"></span>
-            <span class="work-item__caption"><span><strong>Bathroom</strong><span>Moisture-resistant paint</span></span><span class="work-item__zoom" aria-hidden="true"><svg><use href="#i-expand"/></svg></span></span>
-          </button>
-          <button class="work-item" type="button" data-lightbox="work" data-title="Home Office" data-sub="Walls &amp; ceiling" data-reveal style="--reveal-delay:160ms">
-            <span class="frame" data-fallback="Home Office"><img src="assets/img/photos/work-office.jpg" alt="Home office with a freshly painted green wall and shelf" loading="lazy" width="1000" height="750"></span>
-            <span class="work-item__caption"><span><strong>Home Office</strong><span>Walls &amp; ceiling</span></span><span class="work-item__zoom" aria-hidden="true"><svg><use href="#i-expand"/></svg></span></span>
-          </button>
+        <ol class="standards">
+          <li class="standard" data-reveal>
+            <span class="standard__icon" aria-hidden="true"><svg><use href="#i-shield"/></svg></span>
+            <h3>We protect your home</h3>
+            <p>Floors, furniture and fixtures are covered or moved with care before any work starts, and the job site stays tidy all day.</p>
+          </li>
+          <li class="standard" data-reveal style="--reveal-delay:80ms">
+            <span class="standard__icon" aria-hidden="true"><svg><use href="#i-ruler"/></svg></span>
+            <h3>We prepare every surface</h3>
+            <p>Holes and dents are filled, cracks repaired, scuffs cleaned and patches sanded and primed, so the new paint goes on smooth and lasts.</p>
+          </li>
+          <li class="standard" data-reveal style="--reveal-delay:160ms">
+            <span class="standard__icon" aria-hidden="true"><svg><use href="#i-roller"/></svg></span>
+            <h3>We paint with care</h3>
+            <p>Quality paint in the right finish for each room, applied in full, even coats with straight, clean lines where walls meet ceilings.</p>
+          </li>
+          <li class="standard" data-reveal style="--reveal-delay:240ms">
+            <span class="standard__icon" aria-hidden="true"><svg><use href="#i-check-circle"/></svg></span>
+            <h3>We finish clean</h3>
+            <p>Tape and drop cloths come off, everything goes back where it was, and we walk through the job with you before we call it done.</p>
+          </li>
+        </ol>
+
+        <div class="work-note" data-reveal>
+          <p><strong>Every job gets the same standard, big or small.</strong> That’s how we’ve kept homeowners coming back, and recommending us to their neighbours, for over 30 years.</p>
+          <div class="work-note__actions">
+            <a class="text-link" href="#before-after">See before &amp; after photos <svg aria-hidden="true"><use href="#i-arrow"/></svg></a>
+            <a class="btn" href="#estimate">Get Your Free Estimate <svg aria-hidden="true"><use href="#i-arrow"/></svg></a>
+          </div>
         </div>
       </div>
     </section>

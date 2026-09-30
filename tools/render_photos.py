@@ -10,12 +10,13 @@ Run:  python3 tools/render_photos.py            (all images)
       python3 tools/render_photos.py bathroom   (names containing "bathroom")
 Needs: numpy, scipy, pillow
 """
+import io
 import sys
 from pathlib import Path
 
 import numpy as np
 from PIL import Image, ImageDraw
-from scipy.ndimage import gaussian_filter
+from scipy.ndimage import gaussian_filter, map_coordinates
 
 W, H = 2400, 1800
 OUT = Path(__file__).resolve().parent.parent / "assets" / "img" / "photos"
@@ -115,8 +116,8 @@ class Scene:
             self.img[topline] = rgb(trim_col) * 1.03
             self.light[(yy > F - bb - 10) & (yy <= F - bb)] *= 0.93
         # lighting
-        L = 0.80 + 0.16 * light_side * -((xx / W) - 0.5) * 2
-        L = L * (1 + self.noise(260, 0.05)) * (1 - 0.10 * ((yy - H * 0.45) / H) ** 2 * 4)
+        L = 0.80 + 0.22 * light_side * -((xx / W) - 0.5) * 2
+        L = L * (1 + self.noise(260, 0.075)) * (1 - 0.10 * ((yy - H * 0.45) / H) ** 2 * 4)
         ao_c = 1 - 0.16 * np.exp(-np.clip(yy - C, 0, None) / 60.0)
         ao_f = 1 - 0.10 * np.exp(-np.clip(F - yy, 0, None) / 45.0)
         L = L * np.where(wall, ao_c * ao_f, 1)
@@ -128,6 +129,28 @@ class Scene:
             L *= 1 - 0.10 * np.exp(-np.abs(xx - self.cx) / 35.0) * wall
             L = np.where(ceil & (xx > self.cx), L * 0.92, L)
         self.light *= L.astype(np.float32)
+
+    def sun_patch(self, pts, period=26.0, amt=0.55, warm=(1.0, 0.94, 0.82), blur=6):
+        """Striped patch of sunlight coming through blinds (floor or wall)."""
+        m = self.mask(lambda d: d.polygon(pts, fill=255), blur=blur)
+        stripes = (np.mod(self.yy, period) / period < 0.62).astype(np.float32)
+        stripes = gaussian_filter(stripes, 1.6)
+        m = m * (0.25 + 0.75 * stripes)
+        self.light *= 1 + amt * m
+        self.img = self.img * (1 + 0.5 * amt * m[..., None] * (rgb(warm)[None, None] - 1))
+
+    def nail_pops(self, n=4):
+        for _ in range(n):
+            x0 = self.rng.uniform(200, W - 200)
+            y0 = self.rng.uniform(self.C.min() + 200, self.F.min() - 200)
+            hi = self.mask(lambda d: d.ellipse([x0 - 9, y0 - 9, x0 + 5, y0 + 5], fill=255), blur=2.5)
+            lo = self.mask(lambda d: d.ellipse([x0 - 5, y0 - 5, x0 + 9, y0 + 9], fill=255), blur=2.5)
+            self.light *= (1 + 0.06 * hi) * (1 - 0.10 * lo)
+
+    def seams(self, xs, amt=0.012):
+        for x0 in xs:
+            b = np.exp(-((self.xx - x0) / 40.0) ** 2) * self.wall
+            self.light *= 1 + amt * b
 
     def glow(self, x, y, sx, sy, amt):
         g = np.exp(-(((self.xx - x) / sx) ** 2 + ((self.yy - y) / sy) ** 2) / 2)
@@ -212,7 +235,7 @@ class Scene:
         self.light *= 1 - 0.25 * self.mask(lambda d: d.rectangle([x - c - 22, y + h + c + 22, x + w + c + 22, y + h + c + 32], fill=255), blur=4)
         glass = self.mask(lambda d: d.rectangle([x, y, x + w, y + h], fill=255), blur=0.8)
         yy, xx = self.yy, self.xx
-        sky = rgb((1.08, 1.1, 1.12))[None, None] * (1.02 - 0.06 * np.clip((yy - y) / h, 0, 1))[..., None]
+        sky = rgb((1.35, 1.38, 1.42))[None, None] * (1.02 - 0.06 * np.clip((yy - y) / h, 0, 1))[..., None]
         col = np.broadcast_to(sky, (H, W, 3)).copy()
         emit = glass.copy()
         if blinds:
@@ -439,7 +462,7 @@ class Scene:
     def render(self):
         img = self.img * self.light[..., None]
         img = img * (1 - self.emit[..., None]) + self.emit_col * self.emit[..., None]
-        return np.clip(img, 0, 1)
+        return np.clip(img, 0, 1.8).astype(np.float32)
 
 
 # ------------------------------------------------------------- camera -----
@@ -452,31 +475,53 @@ def _coeffs(dst, src):
 
 
 def shoot(scene_img, out=(1200, 900), cx=W / 2, cy=H / 2, view=2000, yaw=0.0, pitch=0.0, roll=0.0,
-          exposure=1.0, wb=(1, 1, 1), vignette=0.38, blur=0.9, noise=0.016, sharpen=0.5, seed=0, quality=80):
+          exposure=1.0, wb=(1, 1, 1), vignette=0.42, noise=0.018, barrel=0.035, bloom=0.9, seed=0, quality=74):
+    """Simulated phone photo of an HDR scene elevation."""
     ow, oh = out
     hw, hh = view / 2, view * oh / ow / 2
     corners = [(-hw * (1 + pitch), -hh * (1 - yaw)), (hw * (1 + pitch), -hh * (1 + yaw)),
                (hw * (1 - pitch), hh * (1 + yaw)), (-hw * (1 - pitch), hh * (1 - yaw))]
     a = np.deg2rad(roll)
     src = [(cx + x * np.cos(a) - y * np.sin(a), cy + x * np.sin(a) + y * np.cos(a)) for x, y in corners]
-    dst = [(0, 0), (ow, 0), (ow, oh), (0, oh)]
-    im = Image.fromarray((scene_img * 255).astype(np.uint8))
-    im = im.transform((ow, oh), Image.PERSPECTIVE, tuple(_coeffs(dst, src)), Image.BICUBIC)
-    f = np.asarray(im, np.float32) / 255.0
+    k = _coeffs([(0, 0), (ow, 0), (ow, oh), (0, oh)], src)
+    yy, xx = np.mgrid[0:oh, 0:ow].astype(np.float32)
+    # barrel distortion of a wide phone lens
+    nx, ny = (xx - ow / 2) / (ow / 2), (yy - oh / 2) / (ow / 2)
+    r2 = nx * nx + ny * ny
+    f_ = 1 + barrel * r2
+    dx, dy = ow / 2 + nx * f_ * ow / 2 / (1 + barrel * 0.6), oh / 2 + ny * f_ * ow / 2 / (1 + barrel * 0.6)
+    den = k[6] * dx + k[7] * dy + 1
+    sx = (k[0] * dx + k[1] * dy + k[2]) / den
+    sy = (k[3] * dx + k[4] * dy + k[5]) / den
+    if sx.min() < 0 or sy.min() < 0 or sx.max() > W - 1 or sy.max() > H - 1:
+        print("  warning: camera sees past the scene edge", round(float(sx.min())), round(float(sy.min())), round(float(sx.max())), round(float(sy.max())))
+    # a touch of lateral chromatic aberration toward the edges
+    f = np.empty((oh, ow, 3), np.float32)
+    for ch, sc in zip(range(3), (1.0012, 1.0, 0.9988)):
+        cxs, cys = (sx - cx) * sc + cx, (sy - cy) * sc + cy
+        f[..., ch] = map_coordinates(scene_img[..., ch], [cys, cxs], order=1, mode="nearest")
     rng = np.random.default_rng(seed)
     f = f * exposure * rgb(wb)[None, None]
-    f = np.clip(f, 0, 1.4)
-    f = f / (1 + 0.25 * np.clip(f - 0.85, 0, None) * 4)         # soft highlight roll-off (phone HDR)
-    yy, xx = np.mgrid[0:oh, 0:ow].astype(np.float32)
-    r2 = ((xx - ow / 2) / (ow / 2)) ** 2 + ((yy - oh / 2) / (oh / 2)) ** 2
-    f = f * (1 - vignette * r2 / 2)[..., None]
-    f = gaussian_filter(f, (blur, blur, 0))
-    f = f + sharpen * (f - gaussian_filter(f, (1.6, 1.6, 0)))
+    # bloom / halation around bright windows and lights
+    hl = np.clip(f.mean(-1, keepdims=True) - 0.9, 0, None)
+    f = f + bloom * (gaussian_filter(hl, (22, 22, 0)) * 0.9 + gaussian_filter(hl, (5, 5, 0)) * 0.5)
+    # phone HDR tone curve: lifted shadows, soft highlight shoulder
+    f = np.where(f < 0.78, f, 0.78 + 0.22 * (1 - np.exp(-(f - 0.78) / 0.22)))
+    f = f + 0.035 * (1 - f) ** 3
     lum = f.mean(-1, keepdims=True)
-    f = f + rng.normal(0, 1, (oh, ow, 1)) * noise * (1.3 - lum)
-    f = f + gaussian_filter(rng.normal(0, 1, (oh, ow, 3)), (1.2, 1.2, 0)) * noise * 0.8
+    f = lum + (f - lum) * 1.07
+    f = f * (1 - vignette * r2 / 2)[..., None]
+    # sensor noise, smeared by noise reduction, then over-sharpened like phone processing
+    f = f + rng.normal(0, 1, (oh, ow, 1)) * noise * (1.25 - lum)
+    f = f + gaussian_filter(rng.normal(0, 1, (oh, ow, 3)), (1.5, 1.5, 0)) * noise
+    f = gaussian_filter(f, (0.85, 0.85, 0))
+    f = f + 0.6 * (f - gaussian_filter(f, (1.4, 1.4, 0)))
     f = np.clip(f, 0, 1)
-    return Image.fromarray((f * 255 + 0.5).astype(np.uint8))
+    im = Image.fromarray((f * 255 + 0.5).astype(np.uint8))
+    buf = io.BytesIO()
+    im.save(buf, "JPEG", quality=90)          # phone saves once, upload/resize saves again
+    buf.seek(0)
+    return Image.open(buf).convert("RGB")
 
 
 WARM = (1.06, 1.0, 0.88)     # incandescent-ish
@@ -492,7 +537,10 @@ def bathroom(state):
     s.room(wall, floor="vinyl", floor_col=(0.66, 0.65, 0.62), light_side=1)
     if before:
         s.wear(1.0, ghosts=[(1420, 470, 200, 260)], grime=[(1560, 820, 70)], patches=2, scuffs=10)
+        s.nail_pops(3)
+        s.seams([1500], 0.015)
     s.glow(1000, 350, 700, 500, 0.12)
+    s.glow(1950, 900, 300, 600, -0.18)
     s.mirror(620, 420, 700, 560, wall)
     s.light_bar(640, 300, 660)
     s.vanity(560, 1090, 820, 520)
@@ -509,7 +557,9 @@ def kitchen(state):
     s.room(wall, floor=None, bb=0, light_side=-1)
     if before:
         s.wear(1.1, grime=[(1560, 930, 80), (760, 1150, 120)], patches=2, scuffs=6)
+        s.nail_pops(2)
     s.window(900, 330, 620, 520, blinds=0.55)
+    s.sun_patch([(1560, 700), (1720, 640), (1720, 1230), (1560, 1250)], amt=0.35 if before else 0.5)
     s.plate(1560, 900, "switch")
     s.plate(700, 1100, "outlet")
     s.kitchen(wall, 1260, kettle=(1840 if before else 480))
@@ -524,7 +574,13 @@ def living(state):
     s.room(wall, floor="wood", floor_col=(0.52, 0.39, 0.27), light_side=-1)
     if before:
         s.wear(1.0, ghosts=[(1250, 470, 420, 300)], grime=[(430, 900, 70)], patches=3, scuffs=26)
+        s.nail_pops(4)
+        s.seams([900, 1600])
     s.window(240, 330, 560, 700, blinds=0.45 if before else 0.3)
+    if before:
+        s.sun_patch([(330, 1575), (820, 1575), (1180, 1800), (560, 1800)], amt=0.5)
+    else:
+        s.sun_patch([(260, 1575), (760, 1575), (980, 1800), (420, 1800)], amt=0.7)
     s.plate(430, 880, "switch")
     s.plate(1760, 1410, "outlet")
     if not before:
@@ -539,8 +595,11 @@ def bedroom(state):
     s.room(wall, floor="carpet", floor_col=(0.62, 0.58, 0.53), light_side=1)
     if before:
         s.wear(1.0, ghosts=[(1000, 420, 320, 240)], grime=[(630, 900, 70), (1990, 850, 60)], patches=3, scuffs=22)
+        s.nail_pops(4)
+        s.seams([1150])
     s.door(200, 330, 420, 1270)                       # closet door
     s.window(1640, 330, 480, 640, blinds=0.7 if before else 0.5)
+    s.sun_patch([(1560, 1610), (2060, 1610), (1880, 1800), (1300, 1800)], amt=0.45 if before else 0.6)
     s.plate(700, 860, "switch")
     s.plate(1300, 1450, "outlet")
     if not before:
@@ -704,20 +763,216 @@ def office():
     return s.render()
 
 
+# ------------------------------------------------------------- video ------
+def _hero_scene(wall, old=None):
+    """Plain wall mid-job: tape on the baseboard, drop cloth on the floor."""
+    s = Scene(55, corner=1850, ceil_y=150, floor_y=1560)
+    s.room(old or wall, floor="wood", floor_col=(0.5, 0.38, 0.27), light_side=-1)
+    if old:
+        s.wear(0.9, ghosts=[(1100, 470, 380, 280)], grime=[(1520, 860, 60)], patches=3, scuffs=22)
+        s.nail_pops(3)
+    s.window(260, 360, 440, 640, blinds=0.5)
+    s.sun_patch([(320, 1575), (760, 1575), (1060, 1800), (500, 1800)], amt=0.45)
+    F = s.F.min()
+    tape = s.mask(lambda d: d.rectangle([0, F - 70, W, F - 44], fill=255))
+    s.put(tape, (0.30, 0.52, 0.78))
+    cloth = s.mask(lambda d: d.polygon([(0, F + 60), (W, F + 30), (W, H), (0, H)], fill=255), blur=3)
+    folds = 1 + s.noise(0, 0.06, aniso=(12, 90)) + s.noise(1, 0.03)
+    s.put(cloth, rgb((0.82, 0.77, 0.66))[None, None] * folds[..., None])
+    s.light *= 1 - 0.25 * s.mask(lambda d: d.rectangle([0, F + 30, W, F + 70], fill=255), blur=8)
+    s.plate(1520, 830, "switch")
+    s.plate(1380, 1380, "outlet")
+    plates = s.mask(lambda d: (d.rectangle([1520, 830, 1568, 910], fill=255), d.rectangle([1380, 1380, 1426, 1454], fill=255)), blur=1)
+    return s, plates
+
+
+preview_dir = "/tmp"
+
+
+def hero_video(fps=24, out=(960, 720), preview=None):
+    import subprocess
+    import imageio_ffmpeg
+    old, new = (0.80, 0.72, 0.58), (0.64, 0.70, 0.66)
+    sa, plates = _hero_scene(new)
+    A = sa.render()
+    sb, _ = _hero_scene(new, old=old)
+    B = sb.render()
+    rng = np.random.default_rng(7)
+    xx, yy, C, F = sa.xx, sa.yy, sa.C[None], sa.F[None]
+    win = sa.mask(lambda d: d.rectangle([260 - 34, 360 - 34, 700 + 34, 1000 + 34], fill=255), blur=0)
+    # brushed cut-in band along ceiling, corner, window casing and taped baseboard (already done)
+    from scipy.ndimage import distance_transform_edt
+    edges = (yy < C + 2) | (xx > 1848) | (win > 0.5) | (yy > F - 72)
+    dist = distance_transform_edt(~edges)
+    band = 62 + gaussian_filter(rng.normal(0, 1, (H, W)), 30) * 40
+    brush = sa.noise(0, 1.0, aniso=(2, 30))
+    cut = np.clip((band - dist) / 18 + 0.4 * brush, 0, 1).astype(np.float32)
+    rollable = sa.wall & (win < 0.5) & (yy < F - 70)
+    # narrow spots beside and above the window are brushed in during the cut-in
+    brushed = ((xx < 205) | ((yy < 335) & (xx < 800))).astype(np.float32)
+    cut = np.maximum(cut, brushed * np.clip(1 + 0.3 * brush, 0, 1))
+    cut *= rollable
+    # roller strokes (up, down, up, down), overlapping, paint thinning toward each stroke's end
+    RW = 300
+    y_top, y_bot = float(sa.C.min() + 40), float(sa.F.min() - 110)
+    plan = [(190, True, 1100, y_bot, 0.6), (490, False, 1100, y_bot, 0.6)] + \
+           [(780 + i * 262, i % 2 == 0, y_top, y_bot, 0.95) for i in range(4)]
+    strokes = []
+    t = 0.7
+    for (x0, up, ya, yb, dur) in plan:
+        strokes.append((x0, up, t, dur, ya, yb))
+        t += dur + 0.24
+    total = t + 1.2
+    sgrid = np.linspace(0, 1, 512)
+    ease = sgrid * sgrid * (3 - 2 * sgrid)
+    S, T = [], []
+    for (x0, up, t0, dur, ya, yb) in strokes:
+        wob = gaussian_filter(rng.normal(0, 1, (H, 1)), (25, 0)) * 9
+        inside = np.clip(np.minimum(xx - (x0 + wob), (x0 + RW + wob) - xx) / 5 + 0.5, 0, 1)
+        frac = (yy - ya) / (yb - ya)
+        prog = np.clip(frac if not up else 1 - frac, 0, 1)            # 0 at stroke start
+        streak = sa.noise(0, 1.0, aniso=(55, 2.0))
+        dens = np.clip(0.99 - 0.13 * prog ** 1.6 + 0.05 * streak, 0.78, 1)
+        vert = np.clip(np.minimum(yy - (ya - 60), (yb + 60) - yy) / 25, 0, 1)
+        S.append((inside * dens * vert * rollable).astype(np.float32))
+        tt = t0 + dur * np.interp(np.clip(prog, 0, 1), ease, sgrid)
+        T.append(tt.astype(np.float32))
+    ridge = np.zeros((H, W), np.float32)
+    for (x0, up, t0, dur, ya, yb) in strokes:
+        for xe in (x0, x0 + RW):
+            ridge = np.maximum(ridge, np.exp(-((xx - xe) / 3.0) ** 2) * ((yy > ya - 40) & (yy < yb + 40)))
+    # roller cover texture (nap), scrolled as it rolls
+    nap = gaussian_filter(rng.normal(0, 1, (400, RW + 40)), 1.2)
+    nap = (nap / nap.std()).astype(np.float32)
+
+    def roller_pos(t):
+        for i, (x0, up, t0, dur, ya, yb) in enumerate(strokes):
+            ys = yb if up else ya                       # where this stroke starts
+            if t < t0:
+                prev = strokes[i - 1] if i else None
+                gap = 0.24 if prev else t0
+                u = np.clip((t - (t0 - gap)) / gap, 0, 1)
+                u = u * u * (3 - 2 * u)
+                if prev:
+                    px0, pup, pya, pyb = prev[0], prev[1], prev[4], prev[5]
+                    pe = pya if pup else pyb            # where the previous stroke ended
+                    return px0 + (x0 - px0) * u + RW / 2, pe + (ys - pe) * u, 0.6
+                return x0 + RW / 2, H + 200 + (ys - H - 200) * u, 0.6
+            if t <= t0 + dur:
+                u = (t - t0) / dur
+                u = u * u * (3 - 2 * u)
+                a, b = (yb, ya) if up else (ya, yb)
+                return x0 + RW / 2, a + (b - a) * u, 1.0
+        x0, up, t0, dur, ya, yb = strokes[-1]
+        u = np.clip((t - (t0 + dur)) / 0.6, 0, 1)
+        ye = ya if up else yb
+        return x0 + RW / 2, ye + (H + 400 - ye) * u * u, 0.6
+
+    ff = imageio_ffmpeg.get_ffmpeg_exe()
+    vdir = OUT.parent.parent / "video"
+    vdir.mkdir(parents=True, exist_ok=True)
+    frames_dir = Path("/tmp") / "wcf_frames"
+    frames_dir.mkdir(exist_ok=True)
+    n = int(total * fps)
+    shake = gaussian_filter(rng.normal(0, 1, (n + 50, 3)), (6, 0)) * np.array([14, 10, 0.35])
+    prev_y = None
+    todo = [int(p * fps) for p in preview] if preview else range(n)
+    for fi in todo:
+        t = fi / fps
+        if preview:
+            prev_y = roller_pos(t - 1 / fps)[1]
+        cov = np.zeros((H, W), np.float32)
+        keep = np.ones((H, W), np.float32)
+        for Si, Ti in zip(S, T):
+            keep *= 1 - Si * np.clip((t - Ti) / 0.05, 0, 1)
+        cov = 1 - keep
+        cov = np.maximum(cov, cut)
+        # fresh paint looks a little darker and glossier while wet
+        wet = np.zeros((H, W), np.float32)
+        for Si, Ti in zip(S, T):
+            age = t - Ti
+            wet = np.maximum(wet, Si * np.clip(1 - age / 4.0, 0, 1) * (age > 0))
+        wet *= 1 - plates
+        Ap = A * (1 - 0.05 * wet)[..., None] * (1 - 0.025 * ridge * (cov > 0.3) * (1 - plates))[..., None]
+        img = B * (1 - cov[..., None]) + Ap * cov[..., None]
+        # the roller
+        rx, ry, press = roller_pos(t)
+        speed = 0 if prev_y is None else abs(ry - prev_y)
+        prev_y = ry
+        if ry < H + 150:
+            x0r, x1r = int(rx - RW / 2 - 20), int(rx + RW / 2 + 20)
+            y0r, y1r = int(ry - 48), int(ry + 48)
+            layer = np.zeros((H, W, 3), np.float32)
+            alpha = np.zeros((H, W), np.float32)
+            sh = np.zeros((H, W), np.float32)
+            ys0, ys1 = max(y0r, 0), min(y1r, H)
+            xs0, xs1 = max(x0r, 0), min(x1r, W)
+            if ys1 > ys0 and xs1 > xs0:
+                vy = (np.arange(ys0, ys1) - ry)[:, None] / 48.0
+                cyl = np.clip(np.sqrt(np.clip(1 - vy ** 2, 0, 1)), 0, 1)
+                off = int(ry * 0.8) % 300
+                tex = nap[off:off + (ys1 - ys0), (xs0 - x0r):(xs1 - x0r)]
+                if tex.shape[0] < ys1 - ys0:
+                    tex = np.resize(tex, (ys1 - ys0, xs1 - xs0))
+                shade = (0.55 + 0.6 * cyl) * (1 + 0.10 * tex)
+                ends = np.clip(np.minimum(np.arange(xs0, xs1) - x0r, x1r - np.arange(xs0, xs1)) / 14.0, 0, 1)[None, :]
+                col = rgb(new)[None, None] * 0.88 * (shade * (0.7 + 0.3 * ends))[..., None]
+                layer[ys0:ys1, xs0:xs1] = col
+                alpha[ys0:ys1, xs0:xs1] = np.clip(cyl * 3, 0, 1) * np.clip(ends * 3, 0, 1)
+            # wire frame and extension pole
+            frame = Image.new("L", (W, H), 0)
+            d = ImageDraw.Draw(frame)
+            d.line([(x1r - 8, ry), (x1r + 22, ry), (x1r + 22, ry + 170), (rx + 70, ry + 330)], fill=255, width=11)
+            pole = Image.new("L", (W, H), 0)
+            ImageDraw.Draw(pole).line([(rx + 70, ry + 320), (rx + 150, H + 400)], fill=255, width=46)
+            fm = gaussian_filter(np.asarray(frame, np.float32) / 255, 1.2)
+            pm = gaussian_filter(np.asarray(pole, np.float32) / 255, 1.5)
+            layer = layer * (1 - fm[..., None]) + rgb((0.62, 0.62, 0.60))[None, None] * fm[..., None]
+            alpha = np.maximum(alpha, fm)
+            pole_shade = 0.16 + 0.08 * np.clip((xx - rx) / 200, 0, 1)
+            layer = layer * (1 - pm[..., None]) + (rgb((1, 1, 1))[None, None] * pole_shade[..., None]) * pm[..., None]
+            alpha = np.maximum(alpha, pm)
+            if speed > 2:
+                k = min(speed / 3.0, 12)
+                layer = gaussian_filter(layer, (k, 0.3, 0))
+                alpha = gaussian_filter(alpha, (k, 0.3))
+            sh = gaussian_filter(np.roll(np.roll(alpha, 26, 0), 18, 1), 18) * (1 - alpha)
+            img = img * (1 - (0.35 if press > 0.9 else 0.22) * sh)[..., None]
+            img = img * (1 - alpha[..., None]) + layer * alpha[..., None]
+        sx, sy, sr = shake[fi]
+        frame_im = shoot(img, out=out, cx=1150 + sx, cy=890 + sy, view=2000, yaw=0.05, pitch=-0.03, roll=-0.6 + sr,
+                         exposure=0.97, wb=NEUTRAL, noise=0.012, bloom=0.8, seed=100 + fi)
+        if preview:
+            frame_im.save(Path(preview_dir) / f"preview-{fi:04d}.jpg", quality=90)
+            continue
+        frame_im.save(frames_dir / f"f{fi:04d}.jpg", quality=92)
+        if fi == 0:
+            frame_im.save(OUT / "hero-wall-before.jpg", quality=80, optimize=True, progressive=True)
+        if fi == n - 1:
+            frame_im.save(OUT / "hero-wall-after.jpg", quality=80, optimize=True, progressive=True)
+        if fi % 24 == 0:
+            print("  frame", fi, "/", n)
+    if preview:
+        return
+    src = str(frames_dir / "f%04d.jpg")
+    subprocess.run([ff, "-y", "-loglevel", "error", "-framerate", str(fps), "-i", src, "-c:v", "libx264", "-pix_fmt", "yuv420p",
+                    "-crf", "25", "-preset", "slow", "-movflags", "+faststart", "-an", str(vdir / "hero-painting.mp4")], check=True)
+    subprocess.run([ff, "-y", "-loglevel", "error", "-framerate", str(fps), "-i", src, "-c:v", "libvpx-vp9", "-b:v", "0",
+                    "-crf", "36", "-row-mt", "1", "-an", str(vdir / "hero-painting.webm")], check=True)
+    print("wrote video/hero-painting.mp4 and .webm")
+
+
 # ------------------------------------------------------------- shots ------
 SHOTS = {
     # Before / after pairs: deliberately different framing, exposure and white balance
-    "ba-bathroom-before.jpg": lambda: shoot(bathroom("before"), cx=1150, cy=930, view=1850, yaw=0.03, pitch=-0.02, roll=-1.3, exposure=0.93, wb=WARM, seed=1),
-    "ba-bathroom-after.jpg": lambda: shoot(bathroom("after"), cx=1060, cy=880, view=1950, yaw=-0.02, pitch=0.02, roll=0.7, exposure=1.03, wb=COOL, seed=2),
-    "ba-kitchen-before.jpg": lambda: shoot(kitchen("before"), cx=1230, cy=820, view=1900, yaw=-0.03, roll=1.1, exposure=0.92, wb=WARM, seed=3),
-    "ba-kitchen-after.jpg": lambda: shoot(kitchen("after"), cx=1150, cy=870, view=2000, yaw=0.02, roll=-0.5, exposure=0.93, wb=NEUTRAL, seed=4),
-    "ba-living-before.jpg": lambda: shoot(living("before"), cx=1180, cy=960, view=2050, yaw=0.04, pitch=0.02, roll=-0.9, exposure=0.9, wb=WARM, seed=5),
-    "ba-living-after.jpg": lambda: shoot(living("after"), cx=1260, cy=900, view=1950, yaw=-0.01, roll=0.6, exposure=1.03, wb=COOL, seed=6),
-    "ba-bedroom-before.jpg": lambda: shoot(bedroom("before"), cx=1260, cy=930, view=2000, yaw=-0.03, roll=1.2, exposure=0.92, wb=WARM, seed=7),
-    "ba-bedroom-after.jpg": lambda: shoot(bedroom("after"), cx=1190, cy=880, view=2080, yaw=0.02, pitch=-0.02, roll=-0.4, exposure=1.02, wb=NEUTRAL, seed=8),
-    # Hero animation: identical camera so the new colour lines up exactly
-    "hero-wall-before.jpg": lambda: shoot(hero("before"), out=(1400, 1050), cx=1100, cy=900, view=2000, yaw=0.02, roll=-0.6, exposure=0.97, wb=NEUTRAL, seed=9),
-    "hero-wall-after.jpg": lambda: shoot(hero("after"), out=(1400, 1050), cx=1100, cy=900, view=2000, yaw=0.02, roll=-0.6, exposure=0.97, wb=NEUTRAL, seed=9),
+    "ba-bathroom-before.jpg": lambda: shoot(bathroom("before"), cx=1150, cy=930, view=1700, yaw=0.10, pitch=-0.05, roll=-1.8, exposure=0.9, wb=WARM, seed=1),
+    "ba-bathroom-after.jpg": lambda: shoot(bathroom("after"), cx=1060, cy=880, view=1800, yaw=0.04, pitch=-0.04, roll=1.1, exposure=1.0, wb=COOL, seed=2),
+    "ba-kitchen-before.jpg": lambda: shoot(kitchen("before"), cx=1230, cy=860, view=1750, yaw=-0.09, pitch=-0.04, roll=1.6, exposure=0.9, wb=WARM, seed=3),
+    "ba-kitchen-after.jpg": lambda: shoot(kitchen("after"), cx=1150, cy=880, view=1850, yaw=0.06, pitch=-0.04, roll=-0.8, exposure=0.9, wb=NEUTRAL, seed=4),
+    "ba-living-before.jpg": lambda: shoot(living("before"), cx=1150, cy=1010, view=1850, yaw=0.12, pitch=-0.05, roll=-1.4, exposure=0.88, wb=WARM, seed=5),
+    "ba-living-after.jpg": lambda: shoot(living("after"), cx=1250, cy=1010, view=1800, yaw=-0.05, pitch=-0.05, roll=0.9, exposure=0.98, wb=COOL, seed=6),
+    "ba-bedroom-before.jpg": lambda: shoot(bedroom("before"), cx=1250, cy=1030, view=1850, yaw=-0.10, pitch=-0.05, roll=1.5, exposure=0.9, wb=WARM, seed=7),
+    "ba-bedroom-after.jpg": lambda: shoot(bedroom("after"), cx=1180, cy=990, view=1900, yaw=0.07, pitch=-0.05, roll=-0.6, exposure=0.98, wb=NEUTRAL, seed=8),
     # Services
     "service-interior.jpg": lambda: shoot(living("after"), cx=1300, cy=800, view=1700, yaw=-0.03, roll=0.8, wb=NEUTRAL, seed=10),
     "service-exterior.jpg": lambda: shoot(siding(), cx=1200, cy=900, view=1900, yaw=0.05, pitch=-0.04, roll=-1.0, wb=COOL, exposure=1.02, seed=11),
@@ -729,13 +984,6 @@ SHOTS = {
     "ceilings.jpg": lambda: shoot(ceiling_view(), out=(900, 675), cx=1150, cy=820, view=2000, pitch=0.10, roll=1.0, exposure=0.95, wb=NEUTRAL, seed=17),
     "doors.jpg": lambda: shoot(doors(), out=(900, 675), cx=1200, cy=950, view=2200, yaw=0.03, roll=-0.6, wb=NEUTRAL, seed=18),
     "hallways.jpg": lambda: shoot(hallway(), out=(900, 675), cx=1150, cy=930, view=2100, roll=0.8, wb=WARM, exposure=1.02, seed=19),
-    # Our Work gallery
-    "work-living.jpg": lambda: shoot(living("after"), out=(1000, 750), cx=1000, cy=920, view=1900, yaw=0.03, roll=-0.4, wb=COOL, seed=20),
-    "work-kitchen.jpg": lambda: shoot(kitchen("after"), out=(1000, 750), cx=1300, cy=880, view=1900, yaw=-0.03, roll=0.5, exposure=0.93, wb=NEUTRAL, seed=21),
-    "work-bedroom.jpg": lambda: shoot(bedroom("after"), out=(1000, 750), cx=1300, cy=850, view=1800, yaw=0.02, roll=-0.9, wb=NEUTRAL, seed=22),
-    "work-bathroom.jpg": lambda: shoot(bathroom("after"), out=(1000, 750), cx=1250, cy=900, view=1800, yaw=-0.04, roll=0.4, wb=COOL, seed=23),
-    "work-office.jpg": lambda: shoot(office(), out=(1000, 750), cx=1250, cy=860, view=1900, yaw=-0.02, roll=-0.5, wb=NEUTRAL, seed=24),
-    "work-exterior.jpg": lambda: shoot(siding(), out=(1000, 750), cx=1250, cy=950, view=1800, yaw=-0.04, pitch=-0.05, roll=0.8, wb=COOL, seed=25),
     # About / Why (job-site shots, no people)
     "about-main.jpg": lambda: shoot(in_progress(), out=(800, 1000), cx=1200, cy=1060, view=1150, yaw=0.02, roll=-0.9, wb=NEUTRAL, seed=26),
     "about-inset.jpg": lambda: shoot(cutline_closeup(), out=(600, 600), cx=1250, cy=900, view=1100, roll=1.5, wb=NEUTRAL, seed=27),
@@ -746,8 +994,17 @@ SHOTS = {
 if __name__ == "__main__":
     only = sys.argv[1:]
     OUT.mkdir(parents=True, exist_ok=True)
+    if "video" in only:
+        hero_video()
+    if "preview" in only:
+        preview_dir = sys.argv[-1]
+        hero_video(preview=[1.0, 2.3, 4.2, 6.6, 8.2])
+        sys.exit()
+        only = [o for o in only if o != "video"]
+        if not only:
+            sys.exit()
     for name, fn in SHOTS.items():
         if only and not any(o in name for o in only):
             continue
-        fn().save(OUT / name, quality=78 if name.startswith("hero") else 80, optimize=True, progressive=True)
+        fn().save(OUT / name, quality=74, optimize=True, progressive=True)
         print("wrote", name)

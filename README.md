@@ -9,7 +9,8 @@ privacy.html          Privacy policy (linked from the forms)
 assets/css/styles.css Design system + all styles
 assets/js/main.js     Navigation, gallery, before/after slider, forms, uploads
 assets/img/           Favicon/logo mark and photos/ (all site photos)
-tools/render_photos.py  Renders the stand-in wall-painting photos
+assets/video/          Hero painting video (mp4 + webm)
+tools/render_photos.py  Renders the stand-in photos and the hero video
 robots.txt, sitemap.xml
 ```
 

@@ -145,35 +145,43 @@ const REVIEWS = [];
     revealEls.forEach((el) => io.observe(el));
   }
 
-  /* ---------- Hero: paint roller rolls a fresh coat over the old wall ---------- */
+  /* ---------- Hero video: plays once when in view, ends on the finished wall ---------- */
   const wall = $("[data-paint-wall]");
   if (wall) {
+    const video = $("video", wall);
     const label = $(".paint-wall__label", wall);
-    const finish = () => {
-      wall.classList.remove("is-animating");
+    const replay = $(".paint-wall__replay", wall);
+    const AFTER = "assets/img/photos/hero-wall-after.jpg";
+    const done = () => {
+      wall.classList.remove("is-playing");
       wall.classList.add("is-done");
-      if (label) label.textContent = "After";
+      label.textContent = "After";
+      if (!reduceMotion) replay.hidden = false;
     };
+    const play = () => {
+      wall.classList.remove("is-done");
+      wall.classList.add("is-playing");
+      replay.hidden = true;
+      video.currentTime = 0;
+      const p = video.play();
+      if (p && p.catch) p.catch(() => { video.poster = AFTER; done(); });
+    };
+    video.addEventListener("ended", done);
+    // if no video format can play, fall back to the finished wall
+    const sources = $$("source", video);
+    sources[sources.length - 1].addEventListener("error", () => { video.poster = AFTER; done(); });
+    replay.addEventListener("click", play);
     if (reduceMotion) {
-      finish();
+      video.removeAttribute("preload");
+      video.poster = AFTER;
+      done();
+    } else if ("IntersectionObserver" in window) {
+      const io = new IntersectionObserver((entries) => {
+        if (entries.some((e) => e.isIntersecting)) { io.disconnect(); setTimeout(play, 500); }
+      }, { threshold: 0.5 });
+      io.observe(wall);
     } else {
-      // Start only once both photos are loaded, so the new coat never rolls on blank
-      const srcs = [$("img", wall).currentSrc || $("img", wall).src, wall.dataset.after];
-      let pending = srcs.length;
-      const failsafe = setTimeout(finish, 6000);
-      const ready = () => {
-        if (--pending > 0) return;
-        clearTimeout(failsafe);
-        wall.classList.add("is-animating");
-        const last = $$(".paint-wall__coat span", wall).pop();
-        last.addEventListener("animationend", finish, { once: true });
-      };
-      srcs.forEach((src) => {
-        const im = new Image();
-        im.onload = ready;
-        im.onerror = () => { clearTimeout(failsafe); finish(); };
-        im.src = src;
-      });
+      play();
     }
   }
 
