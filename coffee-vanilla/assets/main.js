@@ -62,7 +62,7 @@
   status.classList.add(isOpen ? 'is-open' : 'is-closed');
 
   // Scroll reveal
-  var targets = document.querySelectorAll('.section__head, .card, .menu-list li, .story__copy, .story__photo, .themes div, .visit__info, .visit__map');
+  var targets = document.querySelectorAll('.section__head, .card, .menu-list li, .themes div, .visit__info, .visit__map');
   if ('IntersectionObserver' in window && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
     var io = new IntersectionObserver(function (entries) {
       entries.forEach(function (en) {
