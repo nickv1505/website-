@@ -7,6 +7,24 @@
 
   $$("[data-year]").forEach((el) => (el.textContent = new Date().getFullYear()));
 
+  /* ---------- Opening animation (tap to skip) ---------- */
+  const root = document.documentElement;
+  const intro = $(".intro");
+  if (intro && root.classList.contains("has-intro")) {
+    let over = false;
+    const end = (skip) => {
+      if (over) return;
+      over = true;
+      if (skip) root.classList.remove("has-intro");
+      root.classList.add("intro-done");
+      intro.remove();
+    };
+    intro.addEventListener("animationend", (e) => e.animationName === "intro-out" && end(false));
+    intro.addEventListener("click", () => end(true));
+    addEventListener("keydown", () => end(true), { once: true });
+    setTimeout(() => end(false), 4000);
+  }
+
   /* ---------- Header + mobile dock ---------- */
   const top = $(".top");
   const dock = $(".dock");
@@ -68,7 +86,8 @@
   }
 
   /* ---------- Colour playground ---------- */
-  const room = $(".room svg");
+  const room = $(".room .room__photo");
+  const roomName = $("[data-room-name]");
   const now = $(".colour__now");
   const swatches = $$(".swatch");
   swatches.forEach((sw) => sw.addEventListener("click", () => {
@@ -76,7 +95,109 @@
     room.style.setProperty("--wall", getComputedStyle(sw).getPropertyValue("--c").trim());
     $("b", now).textContent = sw.dataset.name;
     $("span", now).textContent = sw.dataset.note;
+    roomName.textContent = sw.dataset.name;
   }));
+
+  /* ---------- Colour picker in the estimate form (100 colours) ---------- */
+  const COLOURS = window.WCF_COLOURS || [];
+  const MAX_COLOURS = 6;
+  const picker = $(".picker");
+  const chosen = [];
+  let renderChosen = () => {};
+  if (picker && COLOURS.length) {
+    const grid = $(".picker__grid", picker);
+    const fams = $(".picker__families", picker);
+    const search = $(".picker__search", picker);
+    const list = $(".picker__list", picker);
+    const hidden = $("#f-colours");
+    const hint = $(".picker__hint", picker);
+    const hintText = hint.textContent;
+    const pv = $(".picker__preview .room__photo", picker);
+    const pvName = $(".picker__now b", picker);
+    const pvMeta = $(".picker__now small", picker);
+    const pvDot = $(".picker__dot", picker);
+    let family = "All";
+
+    ["All", ...new Set(COLOURS.map((c) => c.family))].forEach((f) => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.textContent = f;
+      b.setAttribute("aria-pressed", String(f === family));
+      b.addEventListener("click", () => {
+        family = f;
+        $$("button", fams).forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+        filter();
+      });
+      fams.append(b);
+    });
+
+    const preview = (c, btn) => {
+      pv.style.setProperty("--wall", c.hex);
+      pvDot.style.setProperty("--c", c.hex);
+      pvName.textContent = c.name;
+      pvMeta.textContent = `${c.code} · ${c.family}`;
+      $$(".pc.is-preview", grid).forEach((x) => x.classList.remove("is-preview"));
+      if (btn) btn.classList.add("is-preview");
+    };
+    const buttons = COLOURS.map((c) => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "pc";
+      b.style.setProperty("--c", c.hex);
+      b.setAttribute("aria-pressed", "false");
+      b.setAttribute("aria-label", `${c.name}, ${c.code}`);
+      b.innerHTML = `<span class="pc__chip" aria-hidden="true"></span><span class="pc__name">${c.name}</span><span class="pc__code">${c.code}</span>`;
+      b.addEventListener("mouseenter", () => preview(c, b));
+      b.addEventListener("focus", () => preview(c, b));
+      b.addEventListener("click", () => {
+        preview(c, b);
+        const i = chosen.indexOf(c);
+        if (i >= 0) chosen.splice(i, 1);
+        else if (chosen.length >= MAX_COLOURS) { hint.textContent = `You can pick up to ${MAX_COLOURS} colours. Remove one to add another.`; return; }
+        else chosen.push(c);
+        hint.textContent = hintText;
+        renderChosen();
+      });
+      grid.append(b);
+      return b;
+    });
+    const empty = document.createElement("p");
+    empty.className = "picker__empty-grid";
+    empty.textContent = "No colours match. Try another word or family.";
+    empty.hidden = true;
+    grid.append(empty);
+
+    const filter = () => {
+      const q = search.value.trim().toLowerCase();
+      let shown = 0;
+      COLOURS.forEach((c, i) => {
+        const ok = (family === "All" || c.family === family) && (!q || (c.name + " " + c.code + " " + c.family).toLowerCase().includes(q));
+        buttons[i].hidden = !ok;
+        if (ok) shown++;
+      });
+      empty.hidden = shown > 0;
+    };
+    search.addEventListener("input", filter);
+    search.addEventListener("keydown", (e) => e.key === "Enter" && e.preventDefault());
+
+    renderChosen = () => {
+      list.innerHTML = "";
+      chosen.forEach((c) => {
+        const li = document.createElement("li");
+        li.innerHTML = `<i style="--c:${c.hex}"></i>${c.name}`;
+        const x = document.createElement("button");
+        x.type = "button";
+        x.setAttribute("aria-label", "Remove " + c.name);
+        x.innerHTML = '<svg aria-hidden="true"><use href="#i-x"/></svg>';
+        x.addEventListener("click", () => { chosen.splice(chosen.indexOf(c), 1); renderChosen(); });
+        li.append(x);
+        list.append(li);
+      });
+      COLOURS.forEach((c, i) => buttons[i].setAttribute("aria-pressed", String(chosen.includes(c))));
+      hidden.value = chosen.map((c) => `${c.name} (${c.code}, ${c.hex})`).join("; ");
+    };
+    preview(COLOURS.find((c) => c.name === "English Bay Fog") || COLOURS[0]);
+  }
 
   /* ---------- Photo upload ---------- */
   const MAX = 10, SIZE = 10 * 1024 * 1024;
@@ -131,7 +252,7 @@
     const v = (el.value || "").trim();
     let ok = true;
     if (el.type === "radio") ok = $$(`input[name="${el.name}"]`, form).some((r) => r.checked);
-    else if (el.type === "checkbox") ok = el.checked;
+    else if (el.type === "checkbox") ok = !el.required || el.checked;
     else if (el.required && !v) ok = false;
     else if (v && el.type === "email") ok = EMAIL.test(v);
     else if (v && el.hasAttribute("data-phone")) ok = okPhone(v);
@@ -192,6 +313,7 @@
   $("[data-again]").addEventListener("click", () => {
     form.reset();
     files.length = 0; render(); upMsg("");
+    chosen.length = 0; renderChosen();
     $$(".is-bad", form).forEach((f) => f.classList.remove("is-bad"));
     done.hidden = true; form.hidden = false;
     $("#f-name").focus();

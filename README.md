@@ -13,6 +13,8 @@ assets/video/          Homepage painting video (mp4 + webm)
 tools/make_overlays.py  Makes the wear overlays
 tools/render_photos.py  Renders the homepage painting video: python3 tools/render_photos.py video
 robots.txt, sitemap.xml
+v2/                   Second design (paint-colour theme, 100-colour picker, opening animation)
+tools/make_v2_assets.py  Renders v2's room photo + wall mask, paint texture, roller and edge mask
 ```
 
 Preview locally: `python3 -m http.server` → http://localhost:8000

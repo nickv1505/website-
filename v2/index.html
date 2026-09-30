@@ -17,7 +17,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="assets/css/site.css">
-  <script>document.documentElement.classList.add("js")</script>
+  <script>(function(){var d=document.documentElement;d.classList.add("js");try{if(!matchMedia("(prefers-reduced-motion: reduce)").matches)d.classList.add("has-intro")}catch(e){}})()</script>
 
   <script type="application/ld+json">
   {
@@ -38,6 +38,16 @@
   </script>
 </head>
 <body>
+  <div class="intro" aria-hidden="true">
+    <div class="intro__coat"><span style="--i:0"></span><span style="--i:1"></span><span style="--i:2"></span></div>
+    <img class="intro__roller" src="assets/img/roller.png" alt="" width="420" height="620">
+    <div class="intro__brand">
+      <span class="logo__chip"><i></i><i></i><i></i></span>
+      <span class="intro__name">West Coast <b>Finish</b></span>
+      <span class="intro__tag">Painting homes for 30+ years</span>
+    </div>
+  </div>
+
   <a class="skip" href="#main">Skip to content</a>
 
   <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
@@ -168,58 +178,15 @@
           </div>
           <p class="colour__now" aria-live="polite"><b>English Bay Fog</b> <span>A soft, cool grey that keeps rooms bright.</span></p>
           <p class="colour__small">Colours on screen are close, not exact. We always test real samples on your walls first.</p>
+          <a class="colour__more" href="#estimate">Browse all 100 colours with your free estimate <svg aria-hidden="true"><use href="#i-arrow"/></svg></a>
         </div>
 
         <figure class="room reveal" style="--delay:120ms">
-          <svg viewBox="0 0 640 480" role="img" aria-labelledby="room-title">
-            <title id="room-title">Illustration of a living room whose walls change colour</title>
-            <defs>
-              <linearGradient id="light" x1="0" x2="1" y1="0" y2="0"><stop offset="0" stop-color="#fff" stop-opacity=".22"/><stop offset=".55" stop-color="#fff" stop-opacity="0"/></linearGradient>
-              <linearGradient id="floor" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#b48a5f"/><stop offset="1" stop-color="#8f6a45"/></linearGradient>
-              <linearGradient id="glass" x1="0" x2="1" y1="0" y2="1"><stop offset="0" stop-color="#eaf2f5"/><stop offset="1" stop-color="#c4d6de"/></linearGradient>
-            </defs>
-            <!-- ceiling -->
-            <polygon points="0,0 640,0 560,50 80,50" fill="#f4f3ef"/>
-            <!-- walls -->
-            <polygon class="wall" points="80,50 560,50 560,360 80,360"/>
-            <polygon class="wall wall--side" points="0,0 80,50 80,360 0,430"/>
-            <polygon class="wall wall--side2" points="640,0 560,50 560,360 640,430"/>
-            <rect x="80" y="50" width="480" height="310" fill="url(#light)"/>
-            <!-- baseboards -->
-            <polygon points="80,350 560,350 560,360 80,360" fill="#f2f0ea"/>
-            <polygon points="0,420 80,352 80,360 0,430" fill="#e6e3dc"/>
-            <polygon points="640,420 560,352 560,360 640,430" fill="#e6e3dc"/>
-            <!-- floor -->
-            <polygon points="0,430 80,360 560,360 640,430 640,480 0,480" fill="url(#floor)"/>
-            <g stroke="#7d5c3c" stroke-opacity=".35" stroke-width="1.5"><line x1="80" y1="372" x2="560" y2="372"/><line x1="55" y1="392" x2="585" y2="392"/><line x1="25" y1="418" x2="615" y2="418"/><line x1="0" y1="450" x2="640" y2="450"/></g>
-            <!-- window -->
-            <rect x="120" y="96" width="140" height="170" rx="3" fill="#f2f0ea"/>
-            <rect x="130" y="106" width="120" height="150" fill="url(#glass)"/>
-            <rect x="188" y="106" width="4" height="150" fill="#f2f0ea"/>
-            <rect x="130" y="178" width="120" height="4" fill="#f2f0ea"/>
-            <rect x="114" y="266" width="152" height="8" rx="2" fill="#ebe8e1"/>
-            <!-- light on the floor -->
-            <polygon points="140,362 250,362 300,430 160,430" fill="#fff" opacity=".18"/>
-            <!-- picture -->
-            <rect x="350" y="120" width="120" height="84" fill="#2a2a28"/>
-            <rect x="358" y="128" width="104" height="68" fill="#efece6"/>
-            <path d="M366 188 l24-26 18 18 12-12 34 20z" fill="#9aa792"/>
-            <circle cx="438" cy="146" r="7" fill="#e8a93a"/>
-            <!-- sofa -->
-            <rect x="300" y="262" width="230" height="64" rx="14" fill="#3f4447"/>
-            <rect x="290" y="292" width="250" height="52" rx="12" fill="#4a5054"/>
-            <rect x="282" y="286" width="30" height="62" rx="10" fill="#3a3f42"/>
-            <rect x="518" y="286" width="30" height="62" rx="10" fill="#3a3f42"/>
-            <rect x="328" y="272" width="52" height="40" rx="10" fill="#d9c6a5"/>
-            <rect x="300" y="344" width="8" height="18" fill="#2a2a28"/><rect x="522" y="344" width="8" height="18" fill="#2a2a28"/>
-            <!-- plant -->
-            <path d="M104 360 h40 l-6 -44 h-28z" fill="#c9b9a0"/>
-            <g fill="#5e7355"><ellipse cx="112" cy="290" rx="12" ry="30" transform="rotate(-25 112 290)"/><ellipse cx="134" cy="286" rx="12" ry="32" transform="rotate(20 134 286)"/><ellipse cx="124" cy="276" rx="10" ry="34"/></g>
-            <!-- lamp -->
-            <line x1="580" y1="250" x2="580" y2="372" stroke="#2a2a28" stroke-width="3"/>
-            <path d="M560 250 h40 l-10 -34 h-20z" fill="#efe7d6"/>
-          </svg>
-          <figcaption class="visually-hidden">The walls change to the selected colour.</figcaption>
+          <div class="room__photo" style="--wall:#C9CFCC">
+            <img src="assets/img/room-base.jpg" alt="A room with its walls painted in the selected colour" width="1200" height="900" loading="lazy">
+            <span class="room__paint" aria-hidden="true"></span>
+          </div>
+          <figcaption class="room__cap">Walls shown in <b data-room-name>English Bay Fog</b></figcaption>
         </figure>
       </div>
     </section>
@@ -327,6 +294,31 @@
                 <textarea id="f-msg" name="message" required minlength="10" rows="4" placeholder="Rooms or areas, current condition, colours you like, timing…" aria-describedby="f-msg-e"></textarea>
                 <p class="field__err" id="f-msg-e">Please add a few details (10+ characters).</p>
               </div>
+              <fieldset class="field field--full picker" aria-describedby="picker-hint">
+                <legend>Colours you’d like <small>(optional, pick up to 6)</small></legend>
+                <p class="picker__hint" id="picker-hint">Tap colours to add them to your list. Each one shows on the walls so you can see how it looks.</p>
+                <div class="picker__bar">
+                  <div class="picker__families" role="group" aria-label="Colour families"></div>
+                  <input class="picker__search" id="picker-search" type="search" placeholder="Search 100 colours" aria-label="Search colours" autocomplete="off">
+                </div>
+                <div class="picker__body">
+                  <div class="picker__grid" role="group" aria-label="Colours"></div>
+                  <div class="picker__preview" aria-live="polite">
+                    <div class="room__photo room__photo--small" style="--wall:#C9CFCC">
+                      <img src="assets/img/room-base.jpg" alt="" width="1200" height="900" loading="lazy">
+                      <span class="room__paint" aria-hidden="true"></span>
+                    </div>
+                    <p class="picker__now"><span class="picker__dot"></span><b>English Bay Fog</b><small>WCF 113 · Greys</small></p>
+                  </div>
+                </div>
+                <div class="picker__chosen">
+                  <p class="picker__label">Your colours</p>
+                  <ul class="picker__list" aria-label="Chosen colours"></ul>
+                  <p class="picker__empty">None yet. That’s fine: we can choose together at your estimate.</p>
+                </div>
+                <input type="hidden" name="colours" id="f-colours">
+                <label class="consent"><input type="checkbox" name="colour_help" value="yes"><span>I’d like help choosing colours</span></label>
+              </fieldset>
               <div class="field field--full" data-upload>
                 <span class="field__label" id="f-photos-l">Photos of your home <small>(optional, helps us quote)</small></span>
                 <div class="drop">
@@ -416,6 +408,7 @@
     <a class="btn" href="#estimate">Free estimate</a>
   </div>
 
+  <script src="assets/js/colours.js" defer></script>
   <script src="assets/js/site.js" defer></script>
 </body>
 </html>
