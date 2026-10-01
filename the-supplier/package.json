@@ -1,0 +1,20 @@
+{
+  "name": "the-supplier",
+  "version": "1.0.0",
+  "private": true,
+  "description": "THE SUPPLIER: single-product storefront with Stripe Checkout and verified post-purchase delivery.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "test": "node --test tests/*.test.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "express": "^5.1.0",
+    "stripe": "^23.0.0"
+  }
+}

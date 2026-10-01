@@ -1,0 +1,26 @@
+{
+  "name": "Example Supplier Co.",
+  "summary": "SAMPLE DATA. Replace this file's contents with your real supplier in data/supplier.json. This text is shown under the supplier name.",
+  "contacts": [
+    { "label": "Contact name", "value": "Alex Example" },
+    { "label": "Email", "value": "sales@example.com", "href": "mailto:sales@example.com" },
+    { "label": "Phone / WhatsApp", "value": "+1 555 010 0000", "href": "tel:+15550100000" }
+  ],
+  "links": [
+    { "label": "Website", "value": "example.com", "href": "https://example.com" },
+    { "label": "Instagram", "value": "@examplesupplier", "href": "https://instagram.com/" }
+  ],
+  "categories": ["Category one", "Category two", "Category three", "Category four"],
+  "ordering": [
+    { "label": "Minimum order", "value": "Example: 10 units per style" },
+    { "label": "Payment methods", "value": "Example: bank transfer, PayPal" },
+    { "label": "Shipping", "value": "Example: ships worldwide, 7–14 days" },
+    { "label": "How to order", "value": "Example: message on WhatsApp with item names and quantities" }
+  ],
+  "reselling": [
+    "Example: introduce yourself as a reseller and ask for the current wholesale price list.",
+    "Example: order a small sample before placing a larger order.",
+    "Example: confirm return and defect policies in writing before paying."
+  ],
+  "notes": "Example notes. Anything else buyers should know goes here."
+}
