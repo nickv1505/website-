@@ -1,7 +1,8 @@
 /**
  * Integration tests against a running local stack:
  *   npm run db:start   (local Supabase with migrations + seed)
- *   npm run dev        (Next.js on :3000 with STRIPE_WEBHOOK_SECRET from .env.local)
+ *   (the stripe-webhook Edge Function runs inside the local stack;
+ *    its secret is in supabase/functions/.env)
  *   npm run test:integration
  *
  * They exercise the real database policies and the real webhook endpoint with
@@ -24,7 +25,7 @@ const URL_ = env.NEXT_PUBLIC_SUPABASE_URL;
 const PUBLIC_KEY = env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 const SECRET_KEY = env.SUPABASE_SECRET_KEY;
 const WEBHOOK_SECRET = env.STRIPE_WEBHOOK_SECRET;
-const APP = process.env.APP_URL || 'http://localhost:3000';
+const WEBHOOK_URL = `${env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/stripe-webhook`;
 const PASSWORD = 'correct-horse-battery-9';
 
 const admin = createClient(URL_, SECRET_KEY, { auth: { persistSession: false } });
@@ -73,7 +74,7 @@ function sessionEvent(userId: string, opts: { eventId?: string; sessionId?: stri
 async function postWebhook(event: unknown, secret = WEBHOOK_SECRET) {
   const payload = JSON.stringify(event);
   const header = stripe.webhooks.generateTestHeaderString({ payload, secret });
-  const res = await fetch(`${APP}/api/stripe/webhook`, {
+  const res = await fetch(WEBHOOK_URL, {
     method: 'POST',
     headers: { 'content-type': 'application/json', 'stripe-signature': header },
     body: payload,

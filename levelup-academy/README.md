@@ -2,8 +2,29 @@
 
 A premium online learning platform. One **$49.99 USD** one-time payment unlocks **every** course for life.
 
-- **Stack:** Next.js 16 (App Router, TypeScript) · Tailwind CSS 4 · Supabase (Postgres, Auth, Storage, row level security) · Stripe Checkout + verified webhooks.
-- **Content:** 8 courses, 88 step-by-step lessons. Every lesson has: Goal, Prerequisites, Step-by-step instructions, Tools and resources, Practical example, Expected costs, How this earns revenue, Common mistakes, Action checklist, and Next steps.
+**How it's hosted (no server to manage):**
+- **Website:** a static folder (`npm run build` → `out/`) you can drag onto Netlify Drop, or any static host.
+- **Accounts, lessons, progress, admin:** Supabase, called directly from the browser. Row level security in the database decides who can read paid lessons.
+- **Payments:** two Supabase Edge Functions in `supabase/functions/`:
+  - `create-checkout` creates a Stripe Checkout session; the Stripe secret key stays on the server.
+  - `stripe-webhook` verifies Stripe's signature and grants lifetime access in one idempotent database transaction.
+
+### Deploy checklist (Netlify Drop + Supabase + Stripe)
+
+1. **Supabase → SQL Editor:** run `supabase/setup/1-database.sql`, then the three course files.
+2. **Supabase → Edge Functions:**
+   - Create `create-checkout` and paste `supabase/functions/create-checkout/index.ts`. Keep "Verify JWT" **on**.
+   - Create `stripe-webhook` and paste `supabase/functions/stripe-webhook/index.ts`. Turn "Verify JWT" **off**.
+3. **Supabase → Edge Functions → Secrets:** add `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` and `SITE_URL`.
+4. **Stripe → Developers → Webhooks:** add the endpoint `https://<project-ref>.supabase.co/functions/v1/stripe-webhook` with these events:
+   - `checkout.session.completed`
+   - `checkout.session.async_payment_succeeded`
+   - `checkout.session.async_payment_failed`
+   - `charge.refunded`
+5. **Build the site** with your Supabase URL and publishable key, then drag `out/` onto Netlify. To serve local files the way Netlify does, use `node scripts/serve-static.mjs`.
+6. **Supabase → Authentication → URL Configuration:** set Site URL and Redirect URLs (`https://<site>/**`) to your Netlify address or domain.
+
+The sections below describe the full project. Where they mention Vercel, `/api/...` routes or server-side environment variables, the Edge Functions above replace them.
 
 ---
 

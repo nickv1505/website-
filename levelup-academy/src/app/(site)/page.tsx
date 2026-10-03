@@ -1,26 +1,15 @@
 import Link from 'next/link';
-import { unstable_rethrow } from 'next/navigation';
 
-import { CourseCard } from '@/components/course/course-card';
-import { CurriculumPreview, type CurriculumCourse } from '@/components/marketing/curriculum-preview';
+import { LiveCourseGrid } from '@/components/course/live-course-grid';
+import { CurriculumPreview } from '@/components/marketing/curriculum-preview';
 import { DashboardPreview } from '@/components/marketing/dashboard-preview';
 import { Faq, faqs } from '@/components/marketing/faq';
 import { PricingCard } from '@/components/marketing/pricing-card';
 import { ButtonLink } from '@/components/ui/button';
 import { Icons } from '@/components/ui/icons';
 import { offer, site } from '@/config/site';
-import { catalogStats, getCatalog } from '@/lib/data/catalog';
-import type { CourseWithModules } from '@/lib/types';
-
-async function loadCatalog(): Promise<CourseWithModules[]> {
-  try {
-    return await getCatalog();
-  } catch (err) {
-    unstable_rethrow(err);
-    console.error(err);
-    return [];
-  }
-}
+import { staticCatalog } from '@/lib/catalog-static';
+import { catalogStats } from '@/lib/catalog-utils';
 
 const steps = [
   { title: `Get lifetime access for ${offer.priceLabel}`, text: 'Create your account and pay once through secure Stripe checkout. No subscription.' },
@@ -39,23 +28,9 @@ const reasons = [
   { icon: Icons.phone, title: 'Works on every device', text: 'Learn on your phone, tablet or laptop with synced progress.' },
 ];
 
-export default async function HomePage() {
-  const catalog = await loadCatalog();
+export default function HomePage() {
+  const catalog = staticCatalog();
   const stats = catalogStats(catalog);
-  const curriculum: CurriculumCourse[] = catalog.map((c) => ({
-    slug: c.slug,
-    title: c.title,
-    icon: c.icon,
-    subtitle: c.subtitle,
-    modules: c.modules.map((m) => ({
-      title: m.title,
-      summary: m.summary,
-      lessonSlug: m.lessons[0]?.slug ?? '',
-      minutes: m.lessons.reduce((n, l) => n + l.duration_minutes, 0),
-      preview: m.lessons.some((l) => l.is_preview),
-    })),
-  }));
-
   const faqJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'FAQPage',
@@ -120,17 +95,7 @@ export default async function HomePage() {
               Explore the Courses
             </ButtonLink>
           </div>
-          {catalog.length ? (
-            <div className="mt-14 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              {catalog.map((c) => (
-                <CourseCard key={c.id} course={c} />
-              ))}
-            </div>
-          ) : (
-            <p className="mt-14 rounded-2xl border border-line p-8 text-center text-muted">
-              Courses are loading. If this persists, the database may not be configured yet.
-            </p>
-          )}
+          <LiveCourseGrid initial={catalog} />
         </div>
       </section>
 
@@ -186,7 +151,7 @@ export default async function HomePage() {
             </p>
           </div>
           <div className="mt-14">
-            <CurriculumPreview courses={curriculum} />
+            <CurriculumPreview initial={catalog} />
           </div>
         </div>
       </section>

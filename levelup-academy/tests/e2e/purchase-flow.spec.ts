@@ -17,7 +17,7 @@ const PASSWORD = 'correct-horse-battery-9';
 const PAID_LESSON = '/courses/building-and-selling-websites/building-websites-with-claude-code';
 
 /** Simulates Stripe confirming payment by sending a genuinely signed webhook. */
-async function payViaWebhook(baseURL: string, userId: string) {
+async function payViaWebhook(userId: string) {
   const sessionId = `cs_test_${randomUUID().replace(/-/g, '')}`;
   const payload = JSON.stringify({
     id: `evt_${randomUUID().replace(/-/g, '')}`,
@@ -30,7 +30,7 @@ async function payViaWebhook(baseURL: string, userId: string) {
       },
     },
   });
-  const res = await fetch(`${baseURL}/api/stripe/webhook`, {
+  const res = await fetch(`${env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/stripe-webhook`, {
     method: 'POST',
     headers: { 'content-type': 'application/json', 'stripe-signature': stripe.webhooks.generateTestHeaderString({ payload, secret: env.STRIPE_WEBHOOK_SECRET }) },
     body: payload,
@@ -44,7 +44,7 @@ async function noHorizontalScroll(page: Page) {
   expect(overflow).toBeLessThanOrEqual(1);
 }
 
-test('visitor → sign up → pay → every course unlocked → sign out/in keeps access', async ({ page, baseURL }, info) => {
+test('visitor → sign up → pay → every course unlocked → sign out/in keeps access', async ({ page }, info) => {
   const email = `e2e-${info.project.name}-${randomUUID().slice(0, 6)}@test.local`;
   const errors: string[] = [];
   page.on('pageerror', (e) => errors.push(e.message));
@@ -70,6 +70,12 @@ test('visitor → sign up → pay → every course unlocked → sign out/in keep
   await expect(page.getByRole('heading', { name: 'Unlock the full library' })).toBeVisible();
   const { data: user } = await admin.from('profiles').select('id').eq('email', email).single();
 
+  // The Pay button asks the create-checkout function for a Stripe URL. Stripe's API
+  // is unreachable from this test sandbox, so we expect a clear error, never a fake success.
+  await page.getByRole('button', { name: /Pay \$49\.99 with Stripe/ }).click();
+  await expect(page.getByRole('alert')).toBeVisible();
+  await expect(page).toHaveURL(/\/checkout$/);
+
   // 3. Opening the success URL WITHOUT a verified payment unlocks nothing.
   await page.goto('/checkout/success?session_id=cs_test_forged_session');
   await expect(page.getByRole('heading', { name: 'Finishing up your purchase' })).toBeVisible();
@@ -78,7 +84,7 @@ test('visitor → sign up → pay → every course unlocked → sign out/in keep
   expect((await admin.from('entitlements').select('id').eq('user_id', user!.id)).data).toHaveLength(0);
 
   // 4. Stripe confirms the $49.99 payment via the signed webhook.
-  await payViaWebhook(baseURL!, user!.id);
+  await payViaWebhook(user!.id);
   await page.goto('/checkout/success?session_id=cs_test_after_webhook');
   await expect(page.getByRole('heading', { name: /You.re in/ })).toBeVisible();
   await page.getByRole('link', { name: /Go to my dashboard/ }).click();

@@ -1,9 +1,10 @@
+'use client';
 import Link from 'next/link';
 
 import { ButtonLink } from '@/components/ui/button';
 import { Logo } from '@/components/ui/logo';
 import { offer } from '@/config/site';
-import { getViewer } from '@/lib/auth';
+import { useAuth } from '@/lib/auth';
 
 import { MobileNav } from './mobile-nav';
 
@@ -13,11 +14,9 @@ const links = [
   { href: '/#faq', label: 'FAQ' },
 ];
 
-export async function Header() {
-  const viewer = await getViewer();
-  const cta = viewer?.hasAccess
-    ? { href: '/dashboard', label: 'My Dashboard' }
-    : { href: '/checkout', label: 'Get Full Access' };
+export function Header() {
+  const { viewer, loading } = useAuth();
+  const cta = viewer?.hasAccess ? { href: '/dashboard', label: 'My Dashboard' } : { href: '/checkout', label: 'Get Full Access' };
   const accountLinks = viewer
     ? [
         ...(viewer.hasAccess ? [] : [{ href: '/dashboard', label: 'Dashboard' }]),
@@ -37,7 +36,7 @@ export async function Header() {
             </Link>
           ))}
         </nav>
-        <div className="hidden items-center gap-2 md:flex">
+        <div className={`hidden items-center gap-2 transition-opacity md:flex ${loading ? 'opacity-0' : 'opacity-100'}`}>
           {accountLinks.map((l) => (
             <Link key={l.href} href={l.href} className="rounded-full px-3 py-2 text-sm text-muted transition-colors hover:text-fg">
               {l.label}

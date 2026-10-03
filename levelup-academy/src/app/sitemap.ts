@@ -1,29 +1,23 @@
 import type { MetadataRoute } from 'next';
-import { unstable_rethrow } from 'next/navigation';
 
 import { siteUrl } from '@/config/site';
-import { allLessons, getCatalog } from '@/lib/data/catalog';
+import { staticCatalog } from '@/lib/catalog-static';
+import { allLessons } from '@/lib/catalog-utils';
 
-export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+export const dynamic = 'force-static';
+
+export default function sitemap(): MetadataRoute.Sitemap {
   const base = siteUrl();
   const pages = ['', '/courses', '/terms', '/privacy', '/refunds', '/disclaimer', '/contact'].map((p) => ({
     url: `${base}${p}`,
     changeFrequency: 'weekly' as const,
     priority: p === '' ? 1 : 0.6,
   }));
-  let courses: MetadataRoute.Sitemap = [];
-  try {
-    const catalog = await getCatalog();
-    courses = catalog.flatMap((c) => [
-      { url: `${base}/courses/${c.slug}`, changeFrequency: 'weekly' as const, priority: 0.8 },
-      // Only free preview lessons are useful to search engines.
-      ...allLessons(c)
-        .filter((l) => l.is_preview)
-        .map((l) => ({ url: `${base}/courses/${c.slug}/${l.slug}`, changeFrequency: 'monthly' as const, priority: 0.7 })),
-    ]);
-  } catch (err) {
-    unstable_rethrow(err);
-    // Database unavailable: fall back to static pages.
-  }
+  const courses = staticCatalog().flatMap((c) => [
+    { url: `${base}/courses/${c.slug}`, changeFrequency: 'weekly' as const, priority: 0.8 },
+    ...allLessons(c)
+      .filter((l) => l.is_preview)
+      .map((l) => ({ url: `${base}/courses/${c.slug}/${l.slug}`, changeFrequency: 'monthly' as const, priority: 0.7 })),
+  ]);
   return [...pages, ...courses];
 }

@@ -1,0 +1,4 @@
+# Netlify: pages for courses/lessons added later in the admin area.
+# (Existing files are always served first; these only apply when no file exists.)
+/courses/:course/:lesson   /courses/__fallback__/__fallback__.html   200
+/courses/:course           /courses/__fallback__.html                200

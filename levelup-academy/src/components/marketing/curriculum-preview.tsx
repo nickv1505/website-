@@ -3,6 +3,8 @@ import Link from 'next/link';
 import { useState } from 'react';
 
 import { CourseIcon, Icons } from '@/components/ui/icons';
+import { useCatalog } from '@/lib/data';
+import type { CourseWithModules } from '@/lib/types';
 
 export type CurriculumCourse = {
   slug: string;
@@ -12,7 +14,24 @@ export type CurriculumCourse = {
   modules: { title: string; summary: string; lessonSlug: string; minutes: number; preview: boolean }[];
 };
 
-export function CurriculumPreview({ courses }: { courses: CurriculumCourse[] }) {
+function toCurriculum(c: CourseWithModules): CurriculumCourse {
+  return {
+    slug: c.slug,
+    title: c.title,
+    icon: c.icon,
+    subtitle: c.subtitle,
+    modules: c.modules.map((m) => ({
+      title: m.title,
+      summary: m.summary,
+      lessonSlug: m.lessons[0]?.slug ?? '',
+      minutes: m.lessons.reduce((n, l) => n + l.duration_minutes, 0),
+      preview: m.lessons.some((l) => l.is_preview),
+    })),
+  };
+}
+
+export function CurriculumPreview({ initial }: { initial: CourseWithModules[] }) {
+  const courses = useCatalog(initial).catalog.map(toCurriculum);
   const [active, setActive] = useState(0);
   const course = courses[active];
   if (!course) return null;

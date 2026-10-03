@@ -1,14 +1,14 @@
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
 
-import { AdminHome } from '@/components/admin/admin-views';
+import { AdminLesson } from '@/components/admin/admin-views';
 
 export const metadata: Metadata = { title: 'Admin', robots: { index: false } };
 
 export default function Page() {
   return (
     <Suspense>
-      <AdminHome />
+      <AdminLesson />
     </Suspense>
   );
 }

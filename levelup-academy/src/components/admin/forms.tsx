@@ -1,20 +1,20 @@
 'use client';
-import { useActionState, useState, useTransition, type ReactNode } from 'react';
+import { useState, useTransition, type FormEvent, type ReactNode } from 'react';
 
+import { buttonClass } from '@/components/ui/button';
 import {
   addResource,
   createCourse,
   createLesson,
   createModule,
+  ICONS,
   setLessonVideoPath,
   updateCourse,
   updateLesson,
   updateModule,
+  uploadLessonFile,
   type AdminState,
-} from '@/app/(site)/admin/actions';
-import { buttonClass } from '@/components/ui/button';
-import { SubmitButton } from '@/components/ui/submit-button';
-import { createClient } from '@/lib/supabase/client';
+} from '@/lib/admin';
 import type { Course } from '@/lib/types';
 
 function Notice({ state }: { state: AdminState }) {
@@ -45,13 +45,38 @@ function Toggle({ name, label, defaultChecked }: { name: string; label: string; 
   );
 }
 
-const ICONS = ['spark', 'briefcase', 'code', 'cart', 'chart', 'play', 'megaphone', 'rocket', 'layers'];
-
-export function CourseForm({ course }: { course?: Course }) {
-  const action = course ? updateCourse.bind(null, course.id) : createCourse;
-  const [state, formAction] = useActionState(action, undefined);
+function Submit({ pending, children, variant = 'primary', size = 'md', className = '' }: { pending: boolean; children: ReactNode; variant?: 'primary' | 'secondary'; size?: 'sm' | 'md'; className?: string }) {
   return (
-    <form action={formAction} className="space-y-5">
+    <button type="submit" disabled={pending} className={buttonClass(variant, size, className)}>
+      {pending ? 'Saving…' : children}
+    </button>
+  );
+}
+
+/** Runs a form action with pending and result state. */
+function useAction<T extends AdminState>(action: (form: FormData) => Promise<T>, after?: (result: T, form: HTMLFormElement) => void) {
+  const [state, setState] = useState<AdminState>();
+  const [pending, start] = useTransition();
+  function onSubmit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const formEl = e.currentTarget;
+    const data = new FormData(formEl);
+    start(async () => {
+      const result = await action(data);
+      setState(result);
+      if (!result?.error) after?.(result, formEl);
+    });
+  }
+  return { state, pending, onSubmit };
+}
+
+export function CourseForm({ course, onSaved }: { course?: Course; onSaved?: (id?: string) => void }) {
+  const { state, pending, onSubmit } = useAction(
+    (form) => (course ? updateCourse(course.id, form) : createCourse(form)),
+    (r) => onSaved?.((r as { id?: string }).id)
+  );
+  return (
+    <form onSubmit={onSubmit} className="space-y-5">
       <Notice state={state} />
       <div className="grid gap-5 sm:grid-cols-2">
         <Field label="Title"><input name="title" required defaultValue={course?.title} className="input" /></Field>
@@ -67,46 +92,46 @@ export function CourseForm({ course }: { course?: Course }) {
       <Field label="Description"><textarea name="description" rows={4} defaultValue={course?.description} className="input" /></Field>
       <Field label="Thumbnail URL (optional)"><input name="thumbnail_url" type="url" defaultValue={course?.thumbnail_url ?? ''} className="input" /></Field>
       <Toggle name="is_published" label="Published (visible to visitors)" defaultChecked={course?.is_published ?? false} />
-      <SubmitButton pendingText="Saving…">{course ? 'Save course' : 'Create course'}</SubmitButton>
+      <Submit pending={pending}>{course ? 'Save course' : 'Create course'}</Submit>
     </form>
   );
 }
 
-export function NewModuleForm({ courseId }: { courseId: string }) {
-  const [state, formAction] = useActionState(createModule.bind(null, courseId), undefined);
+export function NewModuleForm({ courseId, onSaved }: { courseId: string; onSaved: () => void }) {
+  const { state, pending, onSubmit } = useAction((f) => createModule(courseId, f), (_, el) => { el.reset(); onSaved(); });
   return (
-    <form action={formAction} className="space-y-3">
+    <form onSubmit={onSubmit} className="space-y-3">
       <Notice state={state} />
       <div className="grid gap-3 sm:grid-cols-[1fr_1.4fr_auto]">
         <input name="title" placeholder="New module title" required className="input" aria-label="Module title" />
         <input name="summary" placeholder="Short summary (optional)" className="input" aria-label="Module summary" />
-        <SubmitButton variant="secondary" pendingText="Adding…">Add module</SubmitButton>
+        <Submit pending={pending} variant="secondary">Add module</Submit>
       </div>
     </form>
   );
 }
 
-export function ModuleEditForm({ module }: { module: { id: string; title: string; summary: string; is_published: boolean } }) {
-  const [state, formAction] = useActionState(updateModule.bind(null, module.id), undefined);
+export function ModuleEditForm({ module, onSaved }: { module: { id: string; title: string; summary: string; is_published: boolean }; onSaved: () => void }) {
+  const { state, pending, onSubmit } = useAction((f) => updateModule(module.id, f), () => onSaved());
   return (
-    <form action={formAction} className="space-y-3">
+    <form onSubmit={onSubmit} className="space-y-3">
       <Notice state={state} />
       <input name="title" defaultValue={module.title} required className="input" aria-label="Module title" />
       <input name="summary" defaultValue={module.summary} className="input" aria-label="Module summary" />
       <div className="flex items-center justify-between gap-4">
         <Toggle name="is_published" label="Module published" defaultChecked={module.is_published} />
-        <SubmitButton variant="secondary" size="sm" pendingText="Saving…">Save module</SubmitButton>
+        <Submit pending={pending} variant="secondary" size="sm">Save module</Submit>
       </div>
     </form>
   );
 }
 
-export function NewLessonForm({ moduleId }: { moduleId: string }) {
-  const [state, formAction] = useActionState(createLesson.bind(null, moduleId), undefined);
+export function NewLessonForm({ moduleId, onCreated }: { moduleId: string; onCreated: (id: string) => void }) {
+  const { state, pending, onSubmit } = useAction((f) => createLesson(moduleId, f), (r) => r.id && onCreated(r.id));
   return (
-    <form action={formAction} className="flex flex-col gap-2 sm:flex-row">
+    <form onSubmit={onSubmit} className="flex flex-col gap-2 sm:flex-row">
       <input name="title" placeholder="New lesson title" required className="input" aria-label="Lesson title" />
-      <SubmitButton variant="secondary" size="sm" pendingText="Adding…" className="h-[46px]">Add lesson</SubmitButton>
+      <Submit pending={pending} variant="secondary" size="sm" className="h-[46px]">Add lesson</Submit>
       <Notice state={state} />
     </form>
   );
@@ -125,10 +150,10 @@ export type LessonFormData = {
   video_url: string | null;
 };
 
-export function LessonForm({ lesson, modules }: { lesson: LessonFormData; modules: { id: string; title: string }[] }) {
-  const [state, formAction] = useActionState(updateLesson.bind(null, lesson.id), undefined);
+export function LessonForm({ lesson, modules, onSaved }: { lesson: LessonFormData; modules: { id: string; title: string }[]; onSaved: () => void }) {
+  const { state, pending, onSubmit } = useAction((f) => updateLesson(lesson.id, f), () => onSaved());
   return (
-    <form action={formAction} className="space-y-5">
+    <form onSubmit={onSubmit} className="space-y-5">
       <Notice state={state} />
       <div className="grid gap-5 sm:grid-cols-2">
         <Field label="Title"><input name="title" required defaultValue={lesson.title} className="input" /></Field>
@@ -156,30 +181,20 @@ export function LessonForm({ lesson, modules }: { lesson: LessonFormData; module
         </Field>
         <Toggle name="is_preview" label="Free preview (anyone can read)" defaultChecked={lesson.is_preview} />
       </div>
-      <SubmitButton pendingText="Saving…">Save lesson</SubmitButton>
+      <Submit pending={pending}>Save lesson</Submit>
     </form>
   );
 }
 
-function safeName(name: string) {
-  return name.toLowerCase().replace(/[^a-z0-9.]+/g, '-').replace(/^-+|-+$/g, '').slice(-80) || 'file';
-}
-
-/** Uploads directly from the browser to the private bucket (allowed for admins only by storage policies). */
-async function upload(lessonId: string, file: File) {
-  const supabase = createClient();
-  const path = `lessons/${lessonId}/${Date.now()}-${safeName(file.name)}`;
-  const { error } = await supabase.storage.from('course-files').upload(path, file, { upsert: false, contentType: file.type || undefined });
-  if (error) throw new Error(error.message);
-  return path;
-}
-
-export function ResourceUploader({ lessonId }: { lessonId: string }) {
+export function ResourceUploader({ lessonId, onSaved }: { lessonId: string; onSaved: () => void }) {
   const [pending, start] = useTransition();
   const [state, setState] = useState<AdminState>();
   const [mode, setMode] = useState<'file' | 'link'>('file');
 
-  function submit(form: FormData) {
+  function onSubmit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const formEl = e.currentTarget;
+    const form = new FormData(formEl);
     setState(undefined);
     start(async () => {
       try {
@@ -190,19 +205,24 @@ export function ResourceUploader({ lessonId }: { lessonId: string }) {
         if (mode === 'file') {
           const file = form.get('file');
           if (!(file instanceof File) || file.size === 0) return setState({ error: 'Choose a file to upload.' });
-          storagePath = await upload(lessonId, file);
+          storagePath = await uploadLessonFile(lessonId, file);
         } else {
           externalUrl = String(form.get('url') ?? '') || null;
         }
-        setState(await addResource({ lessonId, title, kind: mode === 'link' ? 'link' : kind, storagePath, externalUrl }));
-      } catch (e) {
-        setState({ error: e instanceof Error ? e.message : 'Upload failed.' });
+        const result = await addResource({ lessonId, title, kind: mode === 'link' ? 'link' : kind, storagePath, externalUrl });
+        setState(result);
+        if (!result?.error) {
+          formEl.reset();
+          onSaved();
+        }
+      } catch (err) {
+        setState({ error: err instanceof Error ? err.message : 'Upload failed.' });
       }
     });
   }
 
   return (
-    <form action={submit} className="space-y-3">
+    <form onSubmit={onSubmit} className="space-y-3">
       <Notice state={state} />
       <div className="flex gap-2 text-sm" role="group" aria-label="Resource type">
         {(['file', 'link'] as const).map((m) => (
@@ -236,7 +256,7 @@ export function ResourceUploader({ lessonId }: { lessonId: string }) {
   );
 }
 
-export function VideoUploader({ lessonId, currentPath }: { lessonId: string; currentPath: string | null }) {
+export function VideoUploader({ lessonId, currentPath, onSaved }: { lessonId: string; currentPath: string | null; onSaved: () => void }) {
   const [pending, start] = useTransition();
   const [state, setState] = useState<AdminState>();
   return (
@@ -249,7 +269,7 @@ export function VideoUploader({ lessonId, currentPath }: { lessonId: string; cur
             type="button"
             className="text-danger hover:underline"
             disabled={pending}
-            onClick={() => start(async () => { await setLessonVideoPath(lessonId, null); setState({ message: 'Video removed.' }); })}
+            onClick={() => start(async () => { await setLessonVideoPath(lessonId, null); setState({ message: 'Video removed.' }); onSaved(); })}
           >
             Remove
           </button>
@@ -267,9 +287,10 @@ export function VideoUploader({ lessonId, currentPath }: { lessonId: string; cur
           setState(undefined);
           start(async () => {
             try {
-              const path = await upload(lessonId, file);
+              const path = await uploadLessonFile(lessonId, file);
               await setLessonVideoPath(lessonId, path);
               setState({ message: 'Video uploaded.' });
+              onSaved();
             } catch (err) {
               setState({ error: err instanceof Error ? err.message : 'Upload failed.' });
             }
